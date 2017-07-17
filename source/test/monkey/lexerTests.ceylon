@@ -112,13 +112,13 @@ shared void testNextToken() {
     variable Integer count = 0;
     
     for ([expectedType, expectedLiteral] in expectedTokens) {
-        count++;
-        
         value token = lexer.nextToken();
         
         //print("``count``: ``token``");
         
         assertEquals(token.type, expectedType, "Incorrect token type at index ``count``");
         assertEquals(token.literal, expectedLiteral, "Incorrect token literal at index ``count``");
+        
+        count++;
     }
 }
