@@ -106,6 +106,18 @@ shared class Parser(lexer) {
         return BooleanLiteral(currentToken, currentTokenIs(TokenType.true));
     }
     
+    function parseGroupedExpression() {
+        nextToken();
+        
+        value expression = parseExpression(precedence.lowest);
+        
+        if (!expectPeek(TokenType.rparen)) {
+            return null;
+        }
+        
+        return expression;
+    }
+    
     function parseIdentifier() {
         return Identifier(currentToken, currentToken.literal);
     }
@@ -183,6 +195,7 @@ shared class Parser(lexer) {
         TokenType.false -> parseBooleanLiteral,
         TokenType.ident -> parseIdentifier,
         TokenType.int -> parseIntegerLiteral,
+        TokenType.lparen -> parseGroupedExpression,
         TokenType.minus -> parsePrefixExpression,
         TokenType.true -> parseBooleanLiteral
     };
