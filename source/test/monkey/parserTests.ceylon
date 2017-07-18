@@ -8,6 +8,7 @@ import monkey {
     Expression,
     ExpressionStatement,
     Identifier,
+    InfixExpression,
     IntegerLiteral,
     LetStatement,
     Lexer,
@@ -172,6 +173,79 @@ shared void testLetStatements() {
         assert (exists statement, exists expectedIdentifier);
         
         validateLetStatement(statement, expectedIdentifier);
+    }
+}
+
+test
+shared void testOperatorPrecedenceParsing() {
+    value testParameters = [
+        [ "-a * b", "((-a) * b)" ],
+        [ "!-a", "(!(-a))" ],
+        [ "a + b + c", "((a + b) + c)" ],
+        [ "a + b - c", "((a + b) - c)" ],
+        [ "a * b * c", "((a * b) * c)" ],
+        [ "a * b / c", "((a * b) / c)" ],
+        [ "a + b / c", "(a + (b / c))" ],
+        [ "a + b * c + d / e - f", "(((a + (b * c)) + (d / e)) - f)" ],
+        [ "3 + 4; -5 * 5", "(3 + 4)
+                            ((-5) * 5)" ],
+        [ "5 > 4 == 3 < 4", "((5 > 4) == (3 < 4))" ],
+        [ "5 < 4 != 3 > 4", "((5 < 4) != (3 > 4))" ],
+        [ "3 + 4 * 5 == 3 * 1 + 4 * 5", "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))" ]
+    ];
+    
+    for ([ input, expectedString ] in testParameters) {
+        value lexer = Lexer(input);
+        value parser = Parser(lexer);
+        value program = parser.parseProgram();
+        
+        checkParserErrors(parser);
+        
+        assertEquals(program.string, expectedString, "Incorrect AST string");
+    }
+}
+
+test
+shared void testParsingInfixExpressions() {
+    value testParameters = [
+        [ "5 + 5;", 5, "+", 5 ],
+        [ "5 - 5;", 5, "-", 5 ],
+        [ "5 * 5;", 5, "*", 5 ],
+        [ "5 / 5;", 5, "/", 5 ],
+        [ "5 > 5;", 5, ">", 5 ],
+        [ "5 < 5;", 5, "<", 5 ],
+        [ "5 == 5;", 5, "==", 5 ],
+        [ "5 != 5;", 5, "!=", 5 ]
+    ];
+    
+    for ([ input, expectedLeftLiteral, expectedOperator, expectedRightLiteral ] in testParameters) {
+        value lexer = Lexer(input);
+        value parser = Parser(lexer);
+        value program = parser.parseProgram();
+        
+        checkParserErrors(parser);
+        
+        value statements = program.statements;
+        
+        assertEquals(statements.size, 1, "Should be only one statement");
+        
+        value statement = statements[0];
+        
+        assertTrue(statement is ExpressionStatement, "Incorrect statement type");
+        
+        assert (is ExpressionStatement statement);
+        
+        value expression = statement.expression;
+        
+        assertTrue(expression is InfixExpression);
+        
+        assert (is InfixExpression expression);
+        
+        validateIntegerLiteral(expression.left, expectedLeftLiteral);
+        
+        assertEquals(expression.operator, expectedOperator, "Incorrect operator");
+        
+        validateIntegerLiteral(expression.right, expectedRightLiteral);
     }
 }
 

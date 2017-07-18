@@ -50,6 +50,20 @@ shared class ExpressionStatement(token, expression) satisfies Statement {
     string = "``expression else ""``";
 }
 
+shared class InfixExpression(token, left, operator, right) satisfies Expression {
+    Token token;
+    
+    shared Expression? left;
+    
+    shared String operator;
+    
+    shared Expression? right;
+    
+    tokenLiteral = token.literal;
+    
+    string = "(``left else ""`` ``operator`` ``right else ""``)";
+}
+
 shared class LetStatement(token, name, val) satisfies Statement {
     Token token;
     

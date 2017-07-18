@@ -3,7 +3,7 @@ import ceylon.collection {
 }
 
 shared class Parser(lexer) {
-    object precedence {
+    object precedence satisfies Correspondence<TokenType, Integer> {
         shared Integer lowest = 0;
         
         shared Integer equality = 1;
@@ -17,11 +17,26 @@ shared class Parser(lexer) {
         shared Integer prefix = 5;
         
         shared Integer call = 6;
+        
+        value precedences = map {
+            TokenType.eq -> equality,
+            TokenType.notEq -> equality,
+            TokenType.lt -> lessGreater,
+            TokenType.gt -> lessGreater,
+            TokenType.plus -> sum,
+            TokenType.minus -> sum,
+            TokenType.asterisk -> product,
+            TokenType.slash -> product
+        };
+        
+        get(TokenType type) => precedences[type];
+        
+        defines(TokenType type) => precedences.defines(type);
     }
     
     alias PrefixParser => Expression?();
     
-    alias InfixParser => Expression?(Expression);
+    alias InfixParser => Expression?(Expression?);
     
     Lexer lexer;
     
@@ -33,27 +48,46 @@ shared class Parser(lexer) {
     
     late Map<TokenType, PrefixParser> prefixParsers;
     
-    function parseExpression(Integer precedence) {
-        if (exists prefixParser = prefixParsers[currentToken.type]) {
-            return prefixParser();
-        }
-        else {
-            errorList.add("No prefix parser found for ``currentToken.type``");
-            
-            return null;
-        }
-    }
+    late Map<TokenType, InfixParser> infixParsers;
     
-
+    value currentPrecedence => precedence[currentToken.type] else precedence.lowest;
+    
+    function currentTokenIs(TokenType type) => currentToken.type == type;
+    
+    value peekPrecedence => precedence[peekToken.type] else precedence.lowest;
+    
+    function peekTokenIs(TokenType type) => peekToken.type == type;
     
     void nextToken() {
         currentToken = peekToken;
         peekToken = lexer.nextToken();
     }
     
-    function currentTokenIs(TokenType type) => currentToken.type == type;
-    
-    function peekTokenIs(TokenType type) => peekToken.type == type;
+    function parseExpression(Integer precedence) {
+        value prefixParser = prefixParsers[currentToken.type];
+        
+        if (!exists prefixParser) {
+            errorList.add("No prefix parser found for ``currentToken.type``");
+            
+            return null;
+        }
+        
+        variable value left = prefixParser();
+        
+        while (!peekTokenIs(TokenType.semicolon) && precedence < peekPrecedence) {
+            value infixParser = infixParsers[peekToken.type];
+            
+            if (!exists infixParser) {
+                return left;
+            }
+            
+            nextToken();
+            
+            left = infixParser(left);
+        }
+        
+        return left;
+    }
     
     function expectPeek(TokenType type) {
         if (peekTokenIs(type)) {
@@ -70,6 +104,17 @@ shared class Parser(lexer) {
     
     function parseIdentifier() {
         return Identifier(currentToken, currentToken.literal);
+    }
+    
+    function parseInfixExpression(Expression? left) {
+        value operatorToken = currentToken;
+        value precedence = currentPrecedence;
+        
+        nextToken();
+        
+        value right = parseExpression(precedence);
+        
+        return InfixExpression(operatorToken, left, operatorToken.literal, right);
     }
     
     function parseIntegerLiteral() {
@@ -136,7 +181,16 @@ shared class Parser(lexer) {
         TokenType.minus -> parsePrefixExpression
     };
     
-    value infixParsers = map {};
+    infixParsers = map {
+        TokenType.asterisk -> parseInfixExpression,
+        TokenType.eq -> parseInfixExpression,
+        TokenType.gt -> parseInfixExpression,
+        TokenType.lt -> parseInfixExpression,
+        TokenType.minus -> parseInfixExpression,
+        TokenType.notEq -> parseInfixExpression,
+        TokenType.plus -> parseInfixExpression,
+        TokenType.slash -> parseInfixExpression
+    };
     
     function parseExpressionStatement() {
         value statement = ExpressionStatement(currentToken, parseExpression(precedence.lowest));
