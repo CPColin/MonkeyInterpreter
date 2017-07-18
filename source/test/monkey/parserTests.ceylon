@@ -29,6 +29,16 @@ void checkParserErrors(Parser parser) {
     assertEquals(errors.size, 0, "Parser has errors");
 }
 
+void validateIdentifier(Expression? expression, String val) {
+    assertTrue(expression is Identifier, "Wrong expression type");
+    
+    assert (is Identifier expression);
+    
+    assertEquals(expression.val, val, "Wrong string value");
+    
+    assertEquals(expression.tokenLiteral, val, "Wrong token literal");
+}
+
 void validateIntegerLiteral(Expression? expression, Integer val) {
     assertTrue(expression is IntegerLiteral, "Wrong expression type");
     
@@ -49,6 +59,30 @@ void validateLetStatement(Statement statement, String name) {
     assertEquals(statement.name.val, name, "Incorrect identifier name");
     
     assertEquals(statement.name.tokenLiteral, name, "Incorrect identifier literal");
+}
+
+alias Literal => Integer|String;
+
+void validateLiteralExpression(Expression? expression, Literal val) {
+    switch (val)
+    case (is Integer) {
+        validateIntegerLiteral(expression, val);
+    }
+    case (is String) {
+        validateIdentifier(expression, val);
+    }
+}
+
+void validateInfixExpression(Expression? expression, Literal left, String operator, Literal right) {
+    assertTrue(expression is InfixExpression, "Incorrect expression type");
+    
+    assert (is InfixExpression expression);
+    
+    validateLiteralExpression(expression.left, left);
+    
+    assertEquals(expression.operator, operator, "Incorrect operator");
+    
+    validateLiteralExpression(expression.right, right);
 }
 
 void validateReturnStatement(Statement statement, String expression) {
@@ -87,15 +121,7 @@ shared void testIdentifierExpression() {
         
         assert (is ExpressionStatement statement);
         
-        value expression = statement.expression;
-        
-        assertTrue(expression is Identifier, "Incorrect expression type");
-        
-        assert (is Identifier expression);
-        
-        assertEquals(expression.val, expectedIdentifier, "Wrong identifier value");
-        
-        assertEquals(expression.tokenLiteral, expectedIdentifier, "Wrong token literal");
+        validateLiteralExpression(statement.expression, expectedIdentifier);
     }
 }
 
@@ -103,8 +129,8 @@ test
 shared void testIntegerLiteralExpression() {
     value input = "5;";
     
-    value expectedIdentifiers = [
-        [ 5, "5" ]
+    value expectedLiterals = [
+        5
     ];
     
     value lexer = Lexer(input);
@@ -115,29 +141,19 @@ shared void testIntegerLiteralExpression() {
     
     value statements = program.statements;
     
-    assertEquals(statements.size, expectedIdentifiers.size, "Wrong number of statements");
+    assertEquals(statements.size, expectedLiterals.size, "Wrong number of statements");
     
     for (index in 0:statements.size) {
         value statement = statements[index];
-        value expectedIdentifier = expectedIdentifiers[index];
+        value expectedLiteral = expectedLiterals[index];
         
-        assert (exists statement, exists expectedIdentifier);
-        
-        value [ expectedVal, expectedLiteral ] = expectedIdentifier;
+        assert (exists statement, exists expectedLiteral);
         
         assertTrue(statement is ExpressionStatement, "Incorrect statement type");
         
         assert (is ExpressionStatement statement);
         
-        value expression = statement.expression;
-        
-        assertTrue(expression is IntegerLiteral, "Incorrect expression type");
-        
-        assert (is IntegerLiteral expression);
-        
-        assertEquals(expression.val, expectedVal, "Wrong identifier value");
-        
-        assertEquals(expression.tokenLiteral, expectedLiteral, "Wrong token literal");
+        validateLiteralExpression(statement.expression, expectedLiteral);
     }
 }
 
@@ -235,17 +251,8 @@ shared void testParsingInfixExpressions() {
         
         assert (is ExpressionStatement statement);
         
-        value expression = statement.expression;
-        
-        assertTrue(expression is InfixExpression);
-        
-        assert (is InfixExpression expression);
-        
-        validateIntegerLiteral(expression.left, expectedLeftLiteral);
-        
-        assertEquals(expression.operator, expectedOperator, "Incorrect operator");
-        
-        validateIntegerLiteral(expression.right, expectedRightLiteral);
+        validateInfixExpression(statement.expression,
+            expectedLeftLiteral, expectedOperator, expectedRightLiteral);
     }
 }
 
