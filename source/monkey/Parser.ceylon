@@ -3,6 +3,26 @@ import ceylon.collection {
 }
 
 shared class Parser(lexer) {
+    object precedence {
+        shared Integer lowest = 0;
+        
+        shared Integer equality = 1;
+        
+        shared Integer lessGreater = 2;
+        
+        shared Integer sum = 3;
+        
+        shared Integer product = 4;
+        
+        shared Integer prefix = 5;
+        
+        shared Integer call = 6;
+    }
+    
+    alias PrefixParser => Expression();
+    
+    alias InfixParser => Expression(Expression);
+    
     Lexer lexer;
     
     variable Token currentToken = Token(TokenType.eof, "");
@@ -15,9 +35,6 @@ shared class Parser(lexer) {
         currentToken = peekToken;
         peekToken = lexer.nextToken();
     }
-    
-    nextToken();
-    nextToken();
     
     function currentTokenIs(TokenType type) => currentToken.type == type;
     
@@ -34,6 +51,10 @@ shared class Parser(lexer) {
             
             return false;
         }
+    }
+    
+    function parseIdentifier() {
+        return Identifier(currentToken, currentToken.literal);
     }
     
     function parseLetStatement() {
@@ -70,6 +91,31 @@ shared class Parser(lexer) {
         return ReturnStatement(returnToken, null);
     }
     
+    value prefixParsers = map {
+        TokenType.ident -> parseIdentifier
+    };
+    
+    value infixParsers = map {};
+    
+    function parseExpression(Integer precedence) {
+        if (exists prefixParser = prefixParsers[currentToken.type]) {
+            return prefixParser();
+        }
+        else {
+            return null;
+        }
+    }
+    
+    function parseExpressionStatement() {
+        value statement = ExpressionStatement(currentToken, parseExpression(precedence.lowest));
+        
+        if (peekTokenIs(TokenType.semicolon)) {
+            nextToken();
+        }
+        
+        return statement;
+    }
+    
     function parseStatement() {
         switch (currentToken.type)
         case (TokenType.\ilet) {
@@ -79,9 +125,12 @@ shared class Parser(lexer) {
             return parseReturnStatement();
         }
         else {
-            return null;
+            return parseExpressionStatement();
         }
     }
+    
+    nextToken();
+    nextToken();
     
     shared String[] errors => errorList.sequence();
     
