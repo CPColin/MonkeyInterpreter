@@ -190,27 +190,6 @@ shared class Parser(lexer) {
         return ReturnStatement(returnToken, null);
     }
     
-    prefixParsers = map {
-        TokenType.bang -> parsePrefixExpression,
-        TokenType.false -> parseBooleanLiteral,
-        TokenType.ident -> parseIdentifier,
-        TokenType.int -> parseIntegerLiteral,
-        TokenType.lparen -> parseGroupedExpression,
-        TokenType.minus -> parsePrefixExpression,
-        TokenType.true -> parseBooleanLiteral
-    };
-    
-    infixParsers = map {
-        TokenType.asterisk -> parseInfixExpression,
-        TokenType.eq -> parseInfixExpression,
-        TokenType.gt -> parseInfixExpression,
-        TokenType.lt -> parseInfixExpression,
-        TokenType.minus -> parseInfixExpression,
-        TokenType.notEq -> parseInfixExpression,
-        TokenType.plus -> parseInfixExpression,
-        TokenType.slash -> parseInfixExpression
-    };
-    
     function parseExpressionStatement() {
         value statement = ExpressionStatement(currentToken, parseExpression(precedence.lowest));
         
@@ -233,6 +212,85 @@ shared class Parser(lexer) {
             return parseExpressionStatement();
         }
     }
+    
+    function parseBlockStatement() {
+        value blockToken = currentToken;
+        value statements = ArrayList<Statement>();
+        
+        nextToken();
+        
+        while (!currentTokenIs(TokenType.rbrace) && !currentTokenIs(TokenType.eof)) {
+            value statement = parseStatement();
+            
+            if (exists statement) {
+                statements.add(statement);
+            }
+            
+            nextToken();
+        }
+        
+        return BlockStatement(blockToken, statements.sequence());
+    }
+    
+    function parseIfExpression() {
+        value ifToken = currentToken;
+        
+        if (!expectPeek(TokenType.lparen)) {
+            return null;
+        }
+        
+        nextToken();
+        
+        value condition = parseExpression(precedence.lowest);
+        
+        if (!expectPeek(TokenType.rparen)) {
+            return null;
+        }
+        
+        if (!expectPeek(TokenType.lbrace)) {
+            return null;
+        }
+        
+        value consequence = parseBlockStatement();
+        BlockStatement? alternative;
+        
+        if (peekTokenIs(TokenType.\ielse)) {
+            nextToken();
+            
+            if (!expectPeek(TokenType.lbrace)) {
+                return null;
+            }
+            
+            alternative = parseBlockStatement();
+        }
+        else {
+            alternative = null;
+        }
+        
+        return IfExpression(ifToken, condition, consequence, alternative);
+    }
+    
+    prefixParsers = map {
+        TokenType.bang -> parsePrefixExpression,
+        TokenType.false -> parseBooleanLiteral,
+        TokenType.ident -> parseIdentifier,
+        TokenType.\iif -> parseIfExpression,
+        TokenType.int -> parseIntegerLiteral,
+        TokenType.lparen -> parseGroupedExpression,
+        TokenType.minus -> parsePrefixExpression,
+        TokenType.true -> parseBooleanLiteral
+    };
+    
+    infixParsers = map {
+        TokenType.asterisk -> parseInfixExpression,
+        TokenType.eq -> parseInfixExpression,
+        TokenType.gt -> parseInfixExpression,
+        TokenType.lt -> parseInfixExpression,
+        TokenType.minus -> parseInfixExpression,
+        TokenType.notEq -> parseInfixExpression,
+        TokenType.plus -> parseInfixExpression,
+        TokenType.slash -> parseInfixExpression
+    };
     
     nextToken();
     nextToken();

@@ -11,9 +11,23 @@ shared interface Expression satisfies Node {}
 shared class Program(statements) satisfies Node {
     shared Statement[] statements;
     
-    tokenLiteral => statements.first?.tokenLiteral else "";
+    tokenLiteral = statements.first?.tokenLiteral else "";
     
-    string => StringBuilder().appendAll(
+    string = StringBuilder().appendAll(
+            statements
+                .map(Statement.string)
+                .interpose("\n"))
+            .string;
+}
+
+shared class BlockStatement(token, statements) satisfies Statement {
+    Token token;
+    
+    shared Statement[] statements;
+    
+    tokenLiteral = token.literal;
+    
+    string = StringBuilder().appendAll(
             statements
                 .map(Statement.string)
                 .interpose("\n"))
@@ -38,6 +52,20 @@ shared class Identifier(token, val) satisfies Expression {
     tokenLiteral = token.literal;
     
     string = val;
+}
+
+shared class IfExpression(token, condition, consequence, alternative) satisfies Expression {
+    Token token;
+    
+    shared Expression? condition;
+    
+    shared BlockStatement consequence;
+    
+    shared BlockStatement? alternative;
+    
+    tokenLiteral = token.literal;
+    
+    string = "if ``condition else ""`` ``consequence````if (exists alternative) then " else ``alternative``" else ""``";
 }
 
 shared class IntegerLiteral(token, val) satisfies Expression {

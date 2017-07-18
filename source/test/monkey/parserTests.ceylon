@@ -1,14 +1,17 @@
 import ceylon.test {
     assertEquals,
+    assertFalse,
     assertTrue,
     test
 }
 
 import monkey {
+    BlockStatement,
     BooleanLiteral,
     Expression,
     ExpressionStatement,
     Identifier,
+    IfExpression,
     InfixExpression,
     IntegerLiteral,
     LetStatement,
@@ -17,6 +20,15 @@ import monkey {
     PrefixExpression,
     ReturnStatement,
     Statement
+}
+
+// TODO: use all over
+Type assertType<Type>(Anything val) {
+    assertTrue(val is Type, "Value is wrong type");
+    
+    assert (is Type val);
+    
+    return val;
 }
 
 void checkParserErrors(Parser parser) {
@@ -165,6 +177,74 @@ shared void testIdentifierExpression() {
         
         validateLiteralExpression(statement.expression, expectedIdentifier);
     }
+}
+
+test
+shared void testIfExpression() {
+    value input = "if (x < y) { x }";
+    
+    value lexer = Lexer(input);
+    value parser = Parser(lexer);
+    value program = parser.parseProgram();
+    
+    checkParserErrors(parser);
+    
+    value statements = program.statements;
+    
+    assertEquals(statements.size, 1, "Wrong number of statements");
+    
+    value statement = assertType<ExpressionStatement>(statements[0]);
+    
+    value expression = assertType<IfExpression>(statement.expression);
+    
+    validateInfixExpression(expression.condition, "x", "<", "y");
+    
+    value consequenceStatements = expression.consequence.statements;
+    
+    assertEquals(consequenceStatements.size, 1, "Wrong number of consequence statements");
+    
+    value consequence = assertType<ExpressionStatement>(consequenceStatements[0]);
+    
+    validateIdentifier(consequence.expression, "x");
+    
+    assertFalse(expression.alternative exists, "Alternative should not exist");
+}
+
+test
+shared void testIfElseExpression() {
+    value input = "if (x < y) { x } else { y }";
+    
+    value lexer = Lexer(input);
+    value parser = Parser(lexer);
+    value program = parser.parseProgram();
+    
+    checkParserErrors(parser);
+    
+    value statements = program.statements;
+    
+    assertEquals(statements.size, 1, "Wrong number of statements");
+    
+    value statement = assertType<ExpressionStatement>(statements[0]);
+    
+    value expression = assertType<IfExpression>(statement.expression);
+    
+    validateInfixExpression(expression.condition, "x", "<", "y");
+    
+    value consequenceStatements = expression.consequence.statements;
+    
+    assertEquals(consequenceStatements.size, 1, "Wrong number of consequence statements");
+    
+    value consequence = assertType<ExpressionStatement>(consequenceStatements[0]);
+    
+    validateIdentifier(consequence.expression, "x");
+    
+    value alternativeStatements = expression.alternative?.statements else empty;
+    
+    assertEquals(consequenceStatements.size, 1, "Wrong number of alternative statements");
+    
+    value alternative = assertType<ExpressionStatement>(alternativeStatements[0]);
+    
+    validateIdentifier(alternative.expression, "y");
 }
 
 test
