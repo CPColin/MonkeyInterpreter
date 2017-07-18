@@ -232,6 +232,54 @@ shared class Parser(lexer) {
         return BlockStatement(blockToken, statements.sequence());
     }
     
+    function parseFunctionParameters() {
+        if (peekTokenIs(TokenType.rparen)) {
+            nextToken();
+            
+            return empty;
+        }
+        
+        value identifiers = ArrayList<Identifier>();
+        
+        nextToken();
+        
+        identifiers.add(Identifier(currentToken, currentToken.literal));
+        
+        while (peekTokenIs(TokenType.comma)) {
+            nextToken();
+            nextToken();
+            identifiers.add(Identifier(currentToken, currentToken.literal));
+        }
+        
+        if (!expectPeek(TokenType.rparen)) {
+            return null;
+        }
+        
+        return identifiers.sequence();
+    }
+    
+    function parseFunctionLiteral() {
+        value functionToken = currentToken;
+        
+        if (!expectPeek(TokenType.lparen)) {
+            return null;
+        }
+        
+        value parameters = parseFunctionParameters();
+        
+        if (!exists parameters) {
+            return null;
+        }
+        
+        if (!expectPeek(TokenType.lbrace)) {
+            return null;
+        }
+        
+        value body = parseBlockStatement();
+        
+        return FunctionLiteral(functionToken, parameters, body);
+    }
+    
     function parseIfExpression() {
         value ifToken = currentToken;
         
@@ -273,6 +321,7 @@ shared class Parser(lexer) {
     prefixParsers = map {
         TokenType.bang -> parsePrefixExpression,
         TokenType.false -> parseBooleanLiteral,
+        TokenType.\ifunction -> parseFunctionLiteral,
         TokenType.ident -> parseIdentifier,
         TokenType.\iif -> parseIfExpression,
         TokenType.int -> parseIntegerLiteral,

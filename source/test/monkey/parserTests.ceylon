@@ -6,10 +6,10 @@ import ceylon.test {
 }
 
 import monkey {
-    BlockStatement,
     BooleanLiteral,
     Expression,
     ExpressionStatement,
+    FunctionLiteral,
     Identifier,
     IfExpression,
     InfixExpression,
@@ -144,6 +144,70 @@ shared void testBooleanExpressions() {
         assert (is ExpressionStatement statement);
         
         validateBooleanLiteral(statement.expression, expectedLiteral);
+    }
+}
+
+test
+shared void testFunctionLiteralParsing() {
+    value input = "fn (x, y) { x + y; }";
+    value lexer = Lexer(input);
+    value parser = Parser(lexer);
+    value program = parser.parseProgram();
+    
+    checkParserErrors(parser);
+    
+    value statements = program.statements;
+    
+    assertEquals(statements.size, 1, "Wrong number of statements");
+    
+    value statement = assertType<ExpressionStatement>(statements[0]);
+    
+    value literal = assertType<FunctionLiteral>(statement.expression);
+    value parameters = literal.parameters;
+    
+    assertEquals(parameters.size, 2, "Wrong number of parameters");
+    
+    validateLiteralExpression(parameters[0], "x");
+    validateLiteralExpression(parameters[1], "y");
+    
+    value bodyStatements = literal.body.statements;
+    
+    assertEquals(bodyStatements.size, 1, "Wrong number of body statements");
+    
+    value bodyStatement = assertType<ExpressionStatement>(bodyStatements[0]);
+    
+    validateInfixExpression(bodyStatement.expression, "x", "+", "y");
+}
+
+test
+shared void testFunctionParameterParsing() {
+    value testParameters = [
+        [ "fn() {};", empty ],
+        [ "fn(x) {};", [ "x" ] ],
+        [ "fn(x, y, z) {};", [ "x", "y", "z" ] ]
+    ];
+    
+    for ([ input, expectedParameters ] in testParameters) {
+        value lexer = Lexer(input);
+        value parser = Parser(lexer);
+        value program = parser.parseProgram();
+        
+        checkParserErrors(parser);
+        
+        value statement = assertType<ExpressionStatement>(program.statements[0]);
+        value functionLiteral = assertType<FunctionLiteral>(statement.expression);
+        value parameters = functionLiteral.parameters;
+        
+        assertEquals(parameters.size, expectedParameters.size, "Wrong number of parameters");
+        
+        for (index in 0:parameters.size) {
+            value parameter = parameters[index];
+            value expectedParameter = expectedParameters[index];
+            
+            assert (exists parameter, exists expectedParameter);
+            
+            validateLiteralExpression(parameter, expectedParameter);
+        }
     }
 }
 

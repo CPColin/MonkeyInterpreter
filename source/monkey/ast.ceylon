@@ -44,6 +44,28 @@ shared class BooleanLiteral(token, val) satisfies Expression {
     string = tokenLiteral;
 }
 
+shared class ExpressionStatement(token, expression) satisfies Statement {
+    Token token;
+    
+    shared Expression? expression;
+    
+    tokenLiteral = token.literal;
+    
+    string = "``expression else ""``";
+}
+
+shared class FunctionLiteral(token, parameters, body) satisfies Expression {
+    Token token;
+    
+    shared Identifier[] parameters;
+    
+    shared BlockStatement body;
+    
+    tokenLiteral = token.literal;
+    
+    string = "``tokenLiteral`` (``StringBuilder().appendAll(parameters.map(Identifier.val).interpose(", ")).string``) ``body``";
+}
+
 shared class Identifier(token, val) satisfies Expression {
     Token token;
     
@@ -76,16 +98,6 @@ shared class IntegerLiteral(token, val) satisfies Expression {
     tokenLiteral = token.literal;
     
     string = tokenLiteral;
-}
-
-shared class ExpressionStatement(token, expression) satisfies Statement {
-    Token token;
-    
-    shared Expression? expression;
-    
-    tokenLiteral = token.literal;
-    
-    string = "``expression else ""``";
 }
 
 shared class InfixExpression(token, left, operator, right) satisfies Expression {
