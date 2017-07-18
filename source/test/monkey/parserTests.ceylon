@@ -5,6 +5,7 @@ import ceylon.test {
 }
 
 import monkey {
+    BooleanLiteral,
     Expression,
     ExpressionStatement,
     Identifier,
@@ -27,6 +28,16 @@ void checkParserErrors(Parser parser) {
     }
     
     assertEquals(errors.size, 0, "Parser has errors");
+}
+
+void validateBooleanLiteral(Expression? expression, Boolean val) {
+    assertTrue(expression is BooleanLiteral, "Wrong expression type");
+    
+    assert (is BooleanLiteral expression);
+    
+    assertEquals(expression.val, val, "Wrong boolean value");
+    
+    assertEquals(expression.tokenLiteral, val.string, "Wrong token literal");
 }
 
 void validateIdentifier(Expression? expression, String val) {
@@ -61,10 +72,13 @@ void validateLetStatement(Statement statement, String name) {
     assertEquals(statement.name.tokenLiteral, name, "Incorrect identifier literal");
 }
 
-alias Literal => Integer|String;
+alias Literal => Boolean|Integer|String;
 
 void validateLiteralExpression(Expression? expression, Literal val) {
     switch (val)
+    case (is Boolean) {
+        validateBooleanLiteral(expression, val);
+    }
     case (is Integer) {
         validateIntegerLiteral(expression, val);
     }
@@ -91,6 +105,34 @@ void validateReturnStatement(Statement statement, String expression) {
     assertTrue(statement is ReturnStatement, "Incorrect statement type");
     
     assert (is ReturnStatement statement);
+}
+
+test
+shared void testBooleanExpressions() {
+    value testParameters = [
+        [ "true", true ],
+        [ "false", false ]
+    ];
+    
+    for ([ input, expectedLiteral ] in testParameters) {
+        value lexer = Lexer(input);
+        value parser = Parser(lexer);
+        value program = parser.parseProgram();
+        
+        checkParserErrors(parser);
+        
+        value statements = program.statements;
+        
+        assertEquals(statements.size, 1, "Should be only one statement");
+        
+        value statement = statements[0];
+        
+        assertTrue(statement is ExpressionStatement, "Incorrect statement type");
+        
+        assert (is ExpressionStatement statement);
+        
+        validateBooleanLiteral(statement.expression, expectedLiteral);
+    }
 }
 
 test
@@ -207,7 +249,11 @@ shared void testOperatorPrecedenceParsing() {
                             ((-5) * 5)" ],
         [ "5 > 4 == 3 < 4", "((5 > 4) == (3 < 4))" ],
         [ "5 < 4 != 3 > 4", "((5 < 4) != (3 > 4))" ],
-        [ "3 + 4 * 5 == 3 * 1 + 4 * 5", "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))" ]
+        [ "3 + 4 * 5 == 3 * 1 + 4 * 5", "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))" ],
+        [ "true", "true" ],
+        [ "false", "false" ],
+        [ "3 > 5 == false", "((3 > 5) == false)" ],
+        [ "3 < 5 == true", "((3 < 5) == true)" ]
     ];
     
     for ([ input, expectedString ] in testParameters) {
@@ -231,7 +277,10 @@ shared void testParsingInfixExpressions() {
         [ "5 > 5;", 5, ">", 5 ],
         [ "5 < 5;", 5, "<", 5 ],
         [ "5 == 5;", 5, "==", 5 ],
-        [ "5 != 5;", 5, "!=", 5 ]
+        [ "5 != 5;", 5, "!=", 5 ],
+        [ "true == true;", true, "==", true ],
+        [ "true != false;", true, "!=", false ],
+        [ "false == false;", false, "==", false ]
     ];
     
     for ([ input, expectedLeftLiteral, expectedOperator, expectedRightLiteral ] in testParameters) {
@@ -260,7 +309,9 @@ test
 shared void testParsingPrefixExpressions() {
     value testParameters = [
         [ "!5;", "!", 5 ],
-        [ "-15", "-", 15 ]
+        [ "-15;", "-", 15 ],
+        [ "!true;", "!", true ],
+        [ "!false;", "!", false ]
     ];
     
     for ([ input, expectedOperator, expectedLiteral ] in testParameters) {
@@ -288,7 +339,7 @@ shared void testParsingPrefixExpressions() {
         
         assertEquals(expression.operator, expectedOperator, "Incorrect operator");
         
-        validateIntegerLiteral(expression.right, expectedLiteral);
+        validateLiteralExpression(expression.right, expectedLiteral);
     }
 }
 

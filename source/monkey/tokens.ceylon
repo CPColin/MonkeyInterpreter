@@ -37,8 +37,8 @@ shared abstract class TokenType
     // Keywords
     shared static object \ifunction extends TokenType("FUNCTION") {}
     shared static object \ilet extends TokenType("LET") {}
-    shared static object \itrue extends TokenType("TRUE") {}
-    shared static object \ifalse extends TokenType("FALSE") {}
+    shared static object true extends TokenType("TRUE") {}
+    shared static object false extends TokenType("FALSE") {}
     shared static object \iif extends TokenType("IF") {}
     shared static object \ielse extends TokenType("ELSE") {}
     shared static object \ireturn extends TokenType("RETURN") {}

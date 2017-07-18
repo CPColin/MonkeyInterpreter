@@ -102,6 +102,10 @@ shared class Parser(lexer) {
         }
     }
     
+    function parseBooleanLiteral() {
+        return BooleanLiteral(currentToken, currentTokenIs(TokenType.true));
+    }
+    
     function parseIdentifier() {
         return Identifier(currentToken, currentToken.literal);
     }
@@ -176,9 +180,11 @@ shared class Parser(lexer) {
     
     prefixParsers = map {
         TokenType.bang -> parsePrefixExpression,
+        TokenType.false -> parseBooleanLiteral,
         TokenType.ident -> parseIdentifier,
         TokenType.int -> parseIntegerLiteral,
-        TokenType.minus -> parsePrefixExpression
+        TokenType.minus -> parsePrefixExpression,
+        TokenType.true -> parseBooleanLiteral
     };
     
     infixParsers = map {

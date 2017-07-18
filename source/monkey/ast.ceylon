@@ -20,6 +20,16 @@ shared class Program(statements) satisfies Node {
             .string;
 }
 
+shared class BooleanLiteral(token, val) satisfies Expression {
+    Token token;
+    
+    shared Boolean val;
+    
+    tokenLiteral = token.literal;
+    
+    string = tokenLiteral;
+}
+
 shared class Identifier(token, val) satisfies Expression {
     Token token;
     
