@@ -5,12 +5,14 @@ import ceylon.test {
 }
 
 import monkey {
+    Expression,
     ExpressionStatement,
     Identifier,
     IntegerLiteral,
     LetStatement,
     Lexer,
     Parser,
+    PrefixExpression,
     ReturnStatement,
     Statement
 }
@@ -24,6 +26,16 @@ void checkParserErrors(Parser parser) {
     }
     
     assertEquals(errors.size, 0, "Parser has errors");
+}
+
+void validateIntegerLiteral(Expression? expression, Integer val) {
+    assertTrue(expression is IntegerLiteral, "Wrong expression type");
+    
+    assert (is IntegerLiteral expression);
+    
+    assertEquals(expression.val, val, "Wrong integer value");
+    
+    assertEquals(expression.tokenLiteral, val.string, "Wrong token literal");
 }
 
 void validateLetStatement(Statement statement, String name) {
@@ -160,6 +172,42 @@ shared void testLetStatements() {
         assert (exists statement, exists expectedIdentifier);
         
         validateLetStatement(statement, expectedIdentifier);
+    }
+}
+
+test
+shared void testParsingPrefixExpressions() {
+    value testParameters = [
+        [ "!5;", "!", 5 ],
+        [ "-15", "-", 15 ]
+    ];
+    
+    for ([ input, expectedOperator, expectedLiteral ] in testParameters) {
+        value lexer = Lexer(input);
+        value parser = Parser(lexer);
+        value program = parser.parseProgram();
+        
+        checkParserErrors(parser);
+        
+        value statements = program.statements;
+        
+        assertEquals(statements.size, 1, "Should be only one statement");
+        
+        value statement = statements[0];
+        
+        assertTrue(statement is ExpressionStatement, "Incorrect statement type");
+        
+        assert (is ExpressionStatement statement);
+        
+        value expression = statement.expression;
+        
+        assertTrue(expression is PrefixExpression);
+        
+        assert (is PrefixExpression expression);
+        
+        assertEquals(expression.operator, expectedOperator, "Incorrect operator");
+        
+        validateIntegerLiteral(expression.right, expectedLiteral);
     }
 }
 

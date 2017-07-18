@@ -19,9 +19,9 @@ shared class Parser(lexer) {
         shared Integer call = 6;
     }
     
-    alias PrefixParser => Expression();
+    alias PrefixParser => Expression?();
     
-    alias InfixParser => Expression(Expression);
+    alias InfixParser => Expression?(Expression);
     
     Lexer lexer;
     
@@ -30,6 +30,21 @@ shared class Parser(lexer) {
     variable Token peekToken = currentToken;
     
     value errorList = ArrayList<String>();
+    
+    late Map<TokenType, PrefixParser> prefixParsers;
+    
+    function parseExpression(Integer precedence) {
+        if (exists prefixParser = prefixParsers[currentToken.type]) {
+            return prefixParser();
+        }
+        else {
+            errorList.add("No prefix parser found for ``currentToken.type``");
+            
+            return null;
+        }
+    }
+    
+
     
     void nextToken() {
         currentToken = peekToken;
@@ -91,6 +106,16 @@ shared class Parser(lexer) {
         return LetStatement(letToken, identifier, null);
     }
     
+    function parsePrefixExpression() {
+        value token = currentToken;
+        
+        nextToken();
+        
+        value right = parseExpression(precedence.prefix);
+        
+        return PrefixExpression(token, token.literal, right);
+    }
+    
     function parseReturnStatement() {
         value returnToken = currentToken;
         
@@ -104,21 +129,14 @@ shared class Parser(lexer) {
         return ReturnStatement(returnToken, null);
     }
     
-    value prefixParsers = map {
+    prefixParsers = map {
+        TokenType.bang -> parsePrefixExpression,
         TokenType.ident -> parseIdentifier,
-        TokenType.int -> parseIntegerLiteral
+        TokenType.int -> parseIntegerLiteral,
+        TokenType.minus -> parsePrefixExpression
     };
     
     value infixParsers = map {};
-    
-    function parseExpression(Integer precedence) {
-        if (exists prefixParser = prefixParsers[currentToken.type]) {
-            return prefixParser();
-        }
-        else {
-            return null;
-        }
-    }
     
     function parseExpressionStatement() {
         value statement = ExpressionStatement(currentToken, parseExpression(precedence.lowest));
