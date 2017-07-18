@@ -57,10 +57,26 @@ shared class Parser(lexer) {
         return LetStatement(letToken, identifier, null);
     }
     
+    function parseReturnStatement() {
+        value returnToken = currentToken;
+        
+        nextToken();
+        
+        // TODO: skipping expression parsing for now
+        while (!currentTokenIs(TokenType.semicolon)) {
+            nextToken();
+        }
+        
+        return ReturnStatement(returnToken, null);
+    }
+    
     function parseStatement() {
         switch (currentToken.type)
         case (TokenType.\ilet) {
             return parseLetStatement();
+        }
+        case (TokenType.\ireturn) {
+            return parseReturnStatement();
         }
         else {
             return null;

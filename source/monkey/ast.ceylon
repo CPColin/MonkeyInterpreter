@@ -29,3 +29,11 @@ shared class LetStatement(token, name, val) satisfies Statement {
     
     tokenLiteral = token.literal;
 }
+
+shared class ReturnStatement(token, returnValue) satisfies Statement {
+    Token token;
+    
+    shared Expression? returnValue;
+    
+    tokenLiteral = token.literal;
+}
