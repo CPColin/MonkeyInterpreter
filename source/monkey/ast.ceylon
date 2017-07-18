@@ -30,6 +30,16 @@ shared class Identifier(token, val) satisfies Expression {
     string = val;
 }
 
+shared class IntegerLiteral(token, val) satisfies Expression {
+    Token token;
+    
+    shared Integer val;
+    
+    tokenLiteral = token.literal;
+    
+    string = tokenLiteral;
+}
+
 shared class ExpressionStatement(token, expression) satisfies Statement {
     Token token;
     

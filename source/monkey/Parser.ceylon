@@ -57,6 +57,19 @@ shared class Parser(lexer) {
         return Identifier(currentToken, currentToken.literal);
     }
     
+    function parseIntegerLiteral() {
+        value val = Integer.parse(currentToken.literal);
+        
+        if (is Integer val) {
+            return IntegerLiteral(currentToken, val);
+        }
+        else {
+            errorList.add("Could not parse ``currentToken.literal`` as integer");
+            
+            return null;
+        }
+    }
+    
     function parseLetStatement() {
         value letToken = currentToken;
         
@@ -92,7 +105,8 @@ shared class Parser(lexer) {
     }
     
     value prefixParsers = map {
-        TokenType.ident -> parseIdentifier
+        TokenType.ident -> parseIdentifier,
+        TokenType.int -> parseIntegerLiteral
     };
     
     value infixParsers = map {};

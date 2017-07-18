@@ -7,6 +7,7 @@ import ceylon.test {
 import monkey {
     ExpressionStatement,
     Identifier,
+    IntegerLiteral,
     LetStatement,
     Lexer,
     Parser,
@@ -82,6 +83,48 @@ shared void testIdentifierExpression() {
         assertEquals(expression.val, expectedIdentifier, "Wrong identifier value");
         
         assertEquals(expression.tokenLiteral, expectedIdentifier, "Wrong token literal");
+    }
+}
+
+test
+shared void testIntegerLiteralExpression() {
+    value input = "5;";
+    
+    value expectedIdentifiers = [
+        [ 5, "5" ]
+    ];
+    
+    value lexer = Lexer(input);
+    value parser = Parser(lexer);
+    value program = parser.parseProgram();
+    
+    checkParserErrors(parser);
+    
+    value statements = program.statements;
+    
+    assertEquals(statements.size, expectedIdentifiers.size, "Wrong number of statements");
+    
+    for (index in 0:statements.size) {
+        value statement = statements[index];
+        value expectedIdentifier = expectedIdentifiers[index];
+        
+        assert (exists statement, exists expectedIdentifier);
+        
+        value [ expectedVal, expectedLiteral ] = expectedIdentifier;
+        
+        assertTrue(statement is ExpressionStatement, "Incorrect statement type");
+        
+        assert (is ExpressionStatement statement);
+        
+        value expression = statement.expression;
+        
+        assertTrue(expression is IntegerLiteral, "Incorrect expression type");
+        
+        assert (is IntegerLiteral expression);
+        
+        assertEquals(expression.val, expectedVal, "Wrong identifier value");
+        
+        assertEquals(expression.tokenLiteral, expectedLiteral, "Wrong token literal");
     }
 }
 
