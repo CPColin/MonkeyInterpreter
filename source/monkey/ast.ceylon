@@ -44,6 +44,18 @@ shared class BooleanLiteral(token, val) satisfies Expression {
     string = tokenLiteral;
 }
 
+shared class CallExpression(token, func, arguments) satisfies Expression {
+    Token token;
+    
+    shared Expression? func;
+    
+    shared Expression[]? arguments;
+    
+    tokenLiteral = token.literal;
+    
+    string = "``func else ""``(``if (exists arguments) then StringBuilder().appendAll(arguments.map(Expression.string).interpose(", ")).string else ""``)";
+}
+
 shared class ExpressionStatement(token, expression) satisfies Statement {
     Token token;
     

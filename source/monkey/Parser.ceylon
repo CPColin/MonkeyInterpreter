@@ -21,6 +21,7 @@ shared class Parser(lexer) {
         value precedences = map {
             TokenType.eq -> equality,
             TokenType.notEq -> equality,
+            TokenType.lparen -> call,
             TokenType.lt -> lessGreater,
             TokenType.gt -> lessGreater,
             TokenType.plus -> sum,
@@ -232,6 +233,39 @@ shared class Parser(lexer) {
         return BlockStatement(blockToken, statements.sequence());
     }
     
+    function parseCallArguments() {
+        if (peekTokenIs(TokenType.rparen)) {
+            nextToken();
+            
+            return empty;
+        }
+        
+        nextToken();
+        
+        value arguments = ArrayList<Expression?>();
+        
+        arguments.add(parseExpression(precedence.lowest));
+        
+        while (peekTokenIs(TokenType.comma)) {
+            nextToken();
+            nextToken();
+            arguments.add(parseExpression(precedence.lowest));
+        }
+        
+        if (!expectPeek(TokenType.rparen)) {
+            return null;
+        }
+        
+        return arguments.coalesced.sequence();
+    }
+    
+    function parseCallExpression(Expression? left) {
+        value callToken = currentToken;
+        value arguments = parseCallArguments();
+        
+        return CallExpression(callToken, left, arguments);
+    }
+    
     function parseFunctionParameters() {
         if (peekTokenIs(TokenType.rparen)) {
             nextToken();
@@ -334,6 +368,7 @@ shared class Parser(lexer) {
         TokenType.asterisk -> parseInfixExpression,
         TokenType.eq -> parseInfixExpression,
         TokenType.gt -> parseInfixExpression,
+        TokenType.lparen -> parseCallExpression,
         TokenType.lt -> parseInfixExpression,
         TokenType.minus -> parseInfixExpression,
         TokenType.notEq -> parseInfixExpression,

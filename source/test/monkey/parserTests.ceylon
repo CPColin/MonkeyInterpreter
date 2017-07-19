@@ -7,6 +7,7 @@ import ceylon.test {
 
 import monkey {
     BooleanLiteral,
+    CallExpression,
     Expression,
     ExpressionStatement,
     FunctionLiteral,
@@ -148,6 +149,68 @@ shared void testBooleanExpressions() {
 }
 
 test
+shared void testCallExpressionParsing() {
+    value input = "add(1, 2 * 3, 4 + 5);";
+    value lexer = Lexer(input);
+    value parser = Parser(lexer);
+    value program = parser.parseProgram();
+    
+    checkParserErrors(parser);
+    
+    value statements = program.statements;
+    
+    assertEquals(statements.size, 1, "Wrong number of statements");
+    
+    value statement = assertType<ExpressionStatement>(statements[0]);
+    value expression = assertType<CallExpression>(statement.expression);
+    
+    validateIdentifier(expression.func, "add");
+    
+    value arguments = expression.arguments else empty;
+    
+    assertEquals(arguments.size, 3, "Wrong number of arguments");
+    
+    validateLiteralExpression(arguments[0], 1);
+    validateInfixExpression(arguments[1], 2, "*", 3);
+    validateInfixExpression(arguments[2], 4, "+", 5);
+}
+
+test
+shared void testCallExpressionParameterParsing() {
+    value testParameters = [
+    [ "add();", "add", empty ],
+    [ "add(1);", "add", [ "1" ] ],
+    [ "add(1, 2 * 3, 4 + 5);", "add", [ "1", "(2 * 3)", "(4 + 5)" ] ]
+    ];
+    
+    for ([ input, expectedIdentifier, expectedArguments ] in testParameters) {
+        value lexer = Lexer(input);
+        value parser = Parser(lexer);
+        value program = parser.parseProgram();
+        
+        checkParserErrors(parser);
+        
+        value statement = assertType<ExpressionStatement>(program.statements[0]);
+        value expression = assertType<CallExpression>(statement.expression);
+        
+        validateIdentifier(expression.func, expectedIdentifier);
+        
+        value arguments = expression.arguments else empty;
+        
+        assertEquals(arguments.size, expectedArguments.size, "Wrong number of arguments");
+        
+        for (index in 0:arguments.size) {
+            value argument = arguments[index];
+            value expectedArgument = expectedArguments[index];
+            
+            assert (exists argument, exists expectedArgument);
+            
+            assertEquals(argument.string, expectedArgument, "Wrong AST string for argument");
+        }
+    }
+}
+
+test
 shared void testFunctionLiteralParsing() {
     value input = "fn (x, y) { x + y; }";
     value lexer = Lexer(input);
@@ -161,7 +224,6 @@ shared void testFunctionLiteralParsing() {
     assertEquals(statements.size, 1, "Wrong number of statements");
     
     value statement = assertType<ExpressionStatement>(statements[0]);
-    
     value literal = assertType<FunctionLiteral>(statement.expression);
     value parameters = literal.parameters;
     
@@ -402,7 +464,11 @@ shared void testOperatorPrecedenceParsing() {
         [ "(5 + 5) * 2", "((5 + 5) * 2)" ],
         [ "2 / (5 + 5)", "(2 / (5 + 5))" ],
         [ "-(5 + 5)", "(-(5 + 5))" ],
-        [ "!(true == true)", "(!(true == true))" ]
+        [ "!(true == true)", "(!(true == true))" ],
+        [ "a + add(b * c) + d", "((a + add((b * c))) + d)" ],
+        [ "add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))",
+            "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))" ],
+        [ "add(a + b + c * d / f + g)", "add((((a + b) + ((c * d) / f)) + g))" ]
     ];
     
     for ([ input, expectedString ] in testParameters) {
