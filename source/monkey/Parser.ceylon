@@ -160,12 +160,15 @@ shared class Parser(lexer) {
             return null;
         }
         
-        // TODO: skipping expression parsing for now
-        while (!currentTokenIs(TokenType.semicolon)) {
+        nextToken();
+        
+        value val = parseExpression(precedence.lowest);
+        
+        if (peekTokenIs(TokenType.semicolon)) {
             nextToken();
         }
         
-        return LetStatement(letToken, identifier, null);
+        return LetStatement(letToken, identifier, val);
     }
     
     function parsePrefixExpression() {
@@ -183,12 +186,13 @@ shared class Parser(lexer) {
         
         nextToken();
         
-        // TODO: skipping expression parsing for now
-        while (!currentTokenIs(TokenType.semicolon)) {
+        value returnValue = parseExpression(precedence.lowest);
+        
+        if (peekTokenIs(TokenType.semicolon)) {
             nextToken();
         }
         
-        return ReturnStatement(returnToken, null);
+        return ReturnStatement(returnToken, returnValue);
     }
     
     function parseExpressionStatement() {

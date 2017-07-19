@@ -23,7 +23,7 @@ import monkey {
     Statement
 }
 
-// TODO: use all over
+// TODO: use all over, watch for double-checking
 Type assertType<Type>(Anything val) {
     assertTrue(val is Type, "Value is wrong type");
     
@@ -112,12 +112,14 @@ void validateInfixExpression(Expression? expression, Literal left, String operat
     validateLiteralExpression(expression.right, right);
 }
 
-void validateReturnStatement(Statement statement, String expression) {
-    assertEquals(statement.tokenLiteral, "return", "Incorrect token literal");
-    
+void validateReturnStatement(Statement? statement, Literal expectedReturnValue) {
     assertTrue(statement is ReturnStatement, "Incorrect statement type");
     
     assert (is ReturnStatement statement);
+    
+    assertEquals(statement.tokenLiteral, "return", "Incorrect token literal");
+    
+    validateLiteralExpression(statement.returnValue, expectedReturnValue);
 }
 
 test
@@ -407,36 +409,28 @@ shared void testIntegerLiteralExpression() {
 
 test
 shared void testLetStatements() {
-    value input = "
-                   let x = 5;
-                   let y = 10;
-                   let foobar = 838383;
-                   ";
-    
-    value expectedIdentifiers = [
-        "x",
-        "y",
-        "foobar"
+    value testParameters = [
+        [ "let x = 5;", "x", 5 ],
+        [ "let y = true;", "y", true ],
+        [ "let foobar = y;", "foobar", "y" ]
     ];
-    
-    value lexer = Lexer(input);
-    value parser = Parser(lexer);
-    value program = parser.parseProgram();
-    
-    checkParserErrors(parser);
-    
-    value statements = program.statements;
-    
-    assertEquals(statements.size, expectedIdentifiers.size, "Wrong number of statements");
-    
-    for (index in 0:statements.size) {
-        value statement = statements[index];
-        value expectedIdentifier = expectedIdentifiers[index];
         
-        // TODO: can use Statement? for parameter type, since we're asserting a type in the validator
-        assert (exists statement, exists expectedIdentifier);
+    for ([ input, expectedIdentifier, expectedValue ] in testParameters) {
+        value lexer = Lexer(input);
+        value parser = Parser(lexer);
+        value program = parser.parseProgram();
+        
+        checkParserErrors(parser);
+        
+        value statements = program.statements;
+        
+        assertEquals(statements.size, 1, "Wrong number of statements");
+        
+        value statement = assertType<LetStatement>(statements[0]);
         
         validateLetStatement(statement, expectedIdentifier);
+        
+        validateLiteralExpression(statement.val, expectedValue);
     }
 }
 
@@ -560,34 +554,23 @@ shared void testParsingPrefixExpressions() {
 
 test
 shared void testReturnStatements() {
-    value input = "
-                   return 5;
-                   return 10;
-                   return 993322;
-                   ";
-    
-    value expectedExpressions = [
-        "",
-        "",
-        ""
+    value testParameters = [
+        [ "return 5;", 5 ],
+        [ "return true;", true ],
+        [ "return foobar;", "foobar" ]
     ];
     
-    value lexer = Lexer(input);
-    value parser = Parser(lexer);
-    value program = parser.parseProgram();
-    
-    checkParserErrors(parser);
-    
-    value statements = program.statements;
-    
-    assertEquals(statements.size, expectedExpressions.size, "Wrong number of statements");
-    
-    for (index in 0:statements.size) {
-        value statement = statements[index];
-        value expectedExpression = expectedExpressions[index];
+    for ([ input, expectedValue ] in testParameters) {
+        value lexer = Lexer(input);
+        value parser = Parser(lexer);
+        value program = parser.parseProgram();
         
-        assert (exists statement, exists expectedExpression);
+        checkParserErrors(parser);
         
-        validateReturnStatement(statement, expectedExpression);
+        value statements = program.statements;
+        
+        assertEquals(statements.size, 1, "Wrong number of statements");
+        
+        validateReturnStatement(statements[0], expectedValue);
     }
 }
