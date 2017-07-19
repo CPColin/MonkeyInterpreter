@@ -17,10 +17,11 @@ shared void run() {
         
         if (nonempty errors) {
             errors.each(print);
-            
-            continue;
         }
-        
-        print(program.string);
+        else {
+            if (exists result = eval(program)) {
+                print(result);
+            }
+        }
     }
 }
