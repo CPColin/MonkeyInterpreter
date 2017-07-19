@@ -2,7 +2,7 @@ shared void run() {
     print("Welcome to the Monkey REPL!");
     
     while (true) {
-        process.write(">> ");
+        print(">> ");
         
         value line = process.readLine();
         
@@ -11,15 +11,16 @@ shared void run() {
         }
         
         value lexer = Lexer(line);
+        value parser = Parser(lexer);
+        value program = parser.parseProgram();
+        value errors = parser.errors;
         
-        while (true) {
-            value token = lexer.nextToken();
+        if (nonempty errors) {
+            errors.each(print);
             
-            if (token.type == TokenType.eof) {
-                break;
-            }
-            
-            print(token);
+            continue;
         }
+        
+        print(program.string);
     }
 }
