@@ -6,6 +6,9 @@ shared MonkeyObject? eval(Node? node) {
     case (is ExpressionStatement) {
         return eval(node.expression);
     }
+    case (is BooleanLiteral) {
+        return monkeyBoolean(node.val);
+    }
     case (is IntegerLiteral) {
         return MonkeyInteger(node.val);
     }

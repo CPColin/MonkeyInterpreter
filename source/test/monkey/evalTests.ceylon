@@ -5,6 +5,7 @@ import ceylon.test {
 
 import monkey {
     Lexer,
+    MonkeyBoolean,
     MonkeyInteger,
     MonkeyObject,
     Parser,
@@ -19,10 +20,30 @@ MonkeyObject? testEval(String input) {
     return eval(program);
 }
 
+void validateBooleanObject(MonkeyObject? val, Boolean expectedValue) {
+    value booleanValue = assertType<MonkeyBoolean>(val);
+    
+    assertEquals(booleanValue.val, expectedValue);
+}
+
 void validateIntegerObject(MonkeyObject? val, Integer expectedValue) {
     value integerValue = assertType<MonkeyInteger>(val);
     
     assertEquals(integerValue.val, expectedValue);
+}
+
+test
+shared void testEvalBooleanExpression() {
+    value testParameters = [
+    [ "true", true ],
+    [ "false", false ]
+    ];
+    
+    for ([ input, expectedValue ] in testParameters) {
+        value val = testEval(input);
+        
+        validateBooleanObject(val, expectedValue);
+    }
 }
 
 test

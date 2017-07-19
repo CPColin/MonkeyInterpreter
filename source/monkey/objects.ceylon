@@ -14,12 +14,23 @@ shared class MonkeyInteger(val) satisfies MonkeyObject {
     string = val.string;
 }
 
-shared class MonkeyBoolean(val) satisfies MonkeyObject {
+shared abstract class MonkeyBoolean(val)
+        of monkeyTrue | monkeyFalse
+        satisfies MonkeyObject {
     shared Boolean val;
     
     string = val.string;
 }
 
-shared class MonkeyNull() satisfies MonkeyObject {
+shared object monkeyTrue extends MonkeyBoolean(true) {}
+shared object monkeyFalse extends MonkeyBoolean(false) {}
+shared MonkeyBoolean monkeyBoolean(Boolean val)
+    => val then monkeyTrue else monkeyFalse;
+
+shared abstract class MonkeyNull()
+        of monkeyNull
+        satisfies MonkeyObject {
     string = "null";
 }
+
+shared object monkeyNull extends MonkeyNull() {}
