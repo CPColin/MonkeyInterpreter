@@ -2,7 +2,7 @@ shared void run() {
     print("Welcome to the Monkey REPL!");
     
     while (true) {
-        print(">> ");
+        process.write(">> ");
         
         value line = process.readLine();
         
