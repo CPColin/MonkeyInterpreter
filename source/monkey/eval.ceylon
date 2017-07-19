@@ -1,10 +1,16 @@
 shared MonkeyObject? eval(Node? node) {
     switch (node)
+    case (is BlockStatement) {
+        return evalStatements(node.statements);
+    }
     case (is BooleanLiteral) {
         return monkeyBoolean(node.val);
     }
     case (is ExpressionStatement) {
         return eval(node.expression);
+    }
+    case (is IfExpression) {
+        return evalIfExpression(node);
     }
     case (is InfixExpression) {
         value left = eval(node.left);
@@ -28,19 +34,20 @@ shared MonkeyObject? eval(Node? node) {
     }
 }
 
-MonkeyObject? evalBangOperatorExpression(MonkeyObject? right) {
-    switch (right)
-    case (monkeyTrue) {
-        return monkeyFalse;
+MonkeyObject? evalBangOperatorExpression(MonkeyObject? right)
+        => monkeyBoolean(!isTruthy(right));
+
+MonkeyObject? evalIfExpression(IfExpression expression) {
+    value condition = eval(expression.condition);
+    
+    if (isTruthy(condition)) {
+        return eval(expression.consequence);
     }
-    case (monkeyFalse) {
-        return monkeyTrue;
-    }
-    case (monkeyNull) {
-        return monkeyTrue;
+    else if (exists alternative = expression.alternative) {
+        return eval(alternative);
     }
     else {
-        return monkeyFalse;
+        return monkeyNull;
     }
 }
 
@@ -123,4 +130,20 @@ MonkeyObject? evalStatements(Statement[] statements) {
     }
     
     return result;
+}
+
+Boolean isTruthy(MonkeyObject? val) {
+    switch (val)
+    case (monkeyTrue) {
+        return true;
+    }
+    case (monkeyFalse) {
+        return false;
+    }
+    case (monkeyNull) {
+        return false;
+    }
+    else {
+        return true;
+    }
 }

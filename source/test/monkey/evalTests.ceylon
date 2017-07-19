@@ -7,9 +7,11 @@ import monkey {
     Lexer,
     MonkeyBoolean,
     MonkeyInteger,
+    MonkeyNull,
     MonkeyObject,
     Parser,
-    eval
+    eval,
+    monkeyNull
 }
 
 MonkeyObject? testEval(String input) {
@@ -105,5 +107,29 @@ shared void testEvalIntegerExpression() {
         value val = testEval(input);
         
         validateIntegerObject(val, expectedValue);
+    }
+}
+
+test
+shared void testEvalIfElseExpressions() {
+    value testParameters = [
+        [ "if (true) { 10 }", 10 ],
+        [ "if (false) { 10 }", monkeyNull ],
+        [ "if (1) { 10 }", 10 ],
+        [ "if (1 < 2) { 10 }", 10 ],
+        [ "if (1 > 2) { 10 }", monkeyNull ],
+        [ "if (1 > 2) { 10 } else { 20 }", 20 ],
+        [ "if (1 < 2) { 10 } else { 20 }", 10 ]
+    ];
+    
+    for ([ input, expectedValue ] in testParameters) {
+        value val = testEval(input);
+        
+        if (is Integer expectedValue) {
+            validateIntegerObject(val, expectedValue);
+        }
+        else {
+            assertEquals(val, expectedValue of MonkeyNull, "Value is not null");
+        }
     }
 }
