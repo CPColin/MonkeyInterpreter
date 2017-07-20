@@ -1,7 +1,7 @@
 shared MonkeyObject? eval(Node? node) {
     switch (node)
-    case (is BlockStatement) {
-        return evalStatements(node.statements);
+    case (is BlockStatement|Program) {
+        return evalBlock(node);
     }
     case (is BooleanLiteral) {
         return monkeyBoolean(node.val);
@@ -26,8 +26,10 @@ shared MonkeyObject? eval(Node? node) {
         
         return evalPrefixExpression(node.operator, right);
     }
-    case (is Program) {
-        return evalStatements(node.statements);
+    case (is ReturnStatement) {
+        value val = eval(node.returnValue);
+        
+        return MonkeyReturnValue(val);
     }
     else {
         return null;
@@ -36,6 +38,20 @@ shared MonkeyObject? eval(Node? node) {
 
 MonkeyObject? evalBangOperatorExpression(MonkeyObject? right)
         => monkeyBoolean(!isTruthy(right));
+
+MonkeyObject? evalBlock(BlockStatement|Program block) {
+    variable MonkeyObject? result = null;
+    
+    for (statement in block.statements) {
+        result = eval(statement);
+        
+        if (is MonkeyReturnValue returnValue = result) {
+            return if (is Program block) then returnValue.val else returnValue;
+        }
+    }
+    
+    return result;
+}
 
 MonkeyObject? evalIfExpression(IfExpression expression) {
     value condition = eval(expression.condition);
@@ -120,16 +136,6 @@ MonkeyObject? evalPrefixExpression(String operator, MonkeyObject? right) {
     else {
         return null;
     }
-}
-
-MonkeyObject? evalStatements(Statement[] statements) {
-    variable MonkeyObject? result = null;
-    
-    for (statement in statements) {
-        result = eval(statement);
-    }
-    
-    return result;
 }
 
 Boolean isTruthy(MonkeyObject? val) {

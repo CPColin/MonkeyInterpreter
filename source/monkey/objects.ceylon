@@ -8,12 +8,6 @@ shared interface MonkeyObject {
     shared actual formal String string;
 }
 
-shared class MonkeyInteger(val) satisfies MonkeyObject {
-    shared Integer val;
-    
-    string = val.string;
-}
-
 shared abstract class MonkeyBoolean(val)
         of monkeyTrue | monkeyFalse
         satisfies MonkeyObject {
@@ -27,6 +21,12 @@ shared object monkeyFalse extends MonkeyBoolean(false) {}
 shared MonkeyBoolean monkeyBoolean(Boolean val)
     => val then monkeyTrue else monkeyFalse;
 
+shared class MonkeyInteger(val) satisfies MonkeyObject {
+    shared Integer val;
+    
+    string = val.string;
+}
+
 shared abstract class MonkeyNull()
         of monkeyNull
         satisfies MonkeyObject {
@@ -34,3 +34,9 @@ shared abstract class MonkeyNull()
 }
 
 shared object monkeyNull extends MonkeyNull() {}
+
+shared class MonkeyReturnValue(val) satisfies MonkeyObject {
+    shared MonkeyObject? val;
+    
+    string = val?.string else "";
+}

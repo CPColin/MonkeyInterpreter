@@ -8,8 +8,13 @@ shared interface Statement satisfies Node {}
 
 shared interface Expression satisfies Node {}
 
-shared class Program(statements) satisfies Node {
-    shared Statement[] statements;
+shared interface Block {
+    shared formal Statement[] statements;
+}
+
+shared class Program(statements)
+        satisfies Node&Block {
+    shared actual Statement[] statements;
     
     tokenLiteral = statements.first?.tokenLiteral else "";
     
@@ -20,10 +25,11 @@ shared class Program(statements) satisfies Node {
             .string;
 }
 
-shared class BlockStatement(token, statements) satisfies Statement {
+shared class BlockStatement(token, statements)
+        satisfies Statement&Block {
     Token token;
     
-    shared Statement[] statements;
+    shared actual Statement[] statements;
     
     tokenLiteral = token.literal;
     
