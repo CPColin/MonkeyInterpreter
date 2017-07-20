@@ -7,9 +7,9 @@ shared class Lexer(input) {
     
     variable Character? character = null;
     
-    shared Character? peekCharacter() => input[readPosition];
+    function peekCharacter() => input[readPosition];
     
-    shared void readCharacter() {
+    void readCharacter() {
         character = input[readPosition];
         position = readPosition;
         readPosition++;
@@ -25,11 +25,30 @@ shared class Lexer(input) {
                 then 'a' <= character <= 'z' || 'A' <= character <= 'Z' || character == '_'
                 else false;
     
+    function isQuotationMark(Character? character)
+            => if (exists character)
+                then character == '"'
+                else false;
+    
     function readLiteral(Boolean(Character?) predicate) {
         value start = position;
         
         while (predicate(character)) {
             readCharacter();
+        }
+        
+        return input[start:position - start];
+    }
+    
+    function readString() {
+        value start = position + 1;
+        
+        while (true) {
+            readCharacter();
+            
+            if (!character exists || isQuotationMark(character)) {
+                break;
+            }
         }
         
         return input[start:position - start];
@@ -104,6 +123,10 @@ shared class Lexer(input) {
         }
         case ('}') {
             type = TokenType.rbrace;
+        }
+        case ('"') {
+            type = TokenType.str;
+            literalOverride = readString();
         }
         case (null) {
             type = TokenType.eof;

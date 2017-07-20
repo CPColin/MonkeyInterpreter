@@ -165,3 +165,13 @@ shared class ReturnStatement(token, returnValue) satisfies Statement {
     
     string = "``tokenLiteral`` ``returnValue else ""``;";
 }
+
+shared class StringLiteral(token, val) satisfies Expression {
+    Token token;
+    
+    shared String val;
+    
+    tokenLiteral = token.literal;
+    
+    string = tokenLiteral;
+}

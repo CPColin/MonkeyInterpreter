@@ -1,6 +1,6 @@
 shared abstract class TokenType
         of illegal | eof
-        | ident | int
+        | ident | int | str
         | \iassign | plus | minus | bang | asterisk | slash | lt | gt | eq | notEq
         | comma | semicolon | lparen | rparen | lbrace | rbrace
         | \ifunction | \ilet | \itrue | \ifalse | \iif | \ielse | \ireturn {
@@ -10,6 +10,7 @@ shared abstract class TokenType
     // Identifiers and literals
     shared static object ident extends TokenType("IDENT") {}
     shared static object int extends TokenType("INT") {}
+    shared static object str extends TokenType("STRING") {}
     
     // Operators
     shared static object \iassign extends TokenType("=") {}

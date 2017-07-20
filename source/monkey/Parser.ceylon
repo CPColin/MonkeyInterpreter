@@ -356,6 +356,10 @@ shared class Parser(lexer) {
         return IfExpression(ifToken, condition, consequence, alternative);
     }
     
+    function parseStringLiteral() {
+        return StringLiteral(currentToken, currentToken.literal);
+    }
+    
     prefixParsers = map {
         TokenType.bang -> parsePrefixExpression,
         TokenType.false -> parseBooleanLiteral,
@@ -365,6 +369,7 @@ shared class Parser(lexer) {
         TokenType.int -> parseIntegerLiteral,
         TokenType.lparen -> parseGroupedExpression,
         TokenType.minus -> parsePrefixExpression,
+        TokenType.str -> parseStringLiteral,
         TokenType.true -> parseBooleanLiteral
     };
     

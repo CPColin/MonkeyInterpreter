@@ -25,7 +25,8 @@ import monkey {
     Parser,
     PrefixExpression,
     ReturnStatement,
-    Statement
+    Statement,
+    StringLiteral
 }
 
 // TODO: use all over, watch for double-checking
@@ -578,4 +579,24 @@ shared void testReturnStatements() {
         
         validateReturnStatement(statements[0], expectedValue);
     }
+}
+
+test
+shared void testStringLiteral() {
+    value input = "\"hello world\"";
+    value expectedValue = "hello world";
+    value lexer = Lexer(input);
+    value parser = Parser(lexer);
+    value program = parser.parseProgram();
+    
+    checkParserErrors(parser);
+    
+    value statements = program.statements;
+    
+    assertEquals(statements.size, 1, "Wrong number of statements");
+    
+    value statement = assertType<ExpressionStatement>(statements[0]);
+    value literal = assertType<StringLiteral>(statement.expression);
+    
+    assertEquals(literal.val, expectedValue, "Wrong string value");
 }
