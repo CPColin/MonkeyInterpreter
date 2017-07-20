@@ -2,28 +2,31 @@ import ceylon.language.meta {
     type
 }
 
-shared MonkeyObject eval(Node? node) {
+shared MonkeyObject eval(Node? node, Environment environment) {
     switch (node)
     case (is BlockStatement|Program) {
-        return evalBlock(node);
+        return evalBlock(node, environment);
     }
     case (is BooleanLiteral) {
         return monkeyBoolean(node.val);
     }
     case (is ExpressionStatement) {
-        return eval(node.expression);
+        return eval(node.expression, environment);
+    }
+    case (is Identifier) {
+        return evalIdentifier(node, environment);
     }
     case (is IfExpression) {
-        return evalIfExpression(node);
+        return evalIfExpression(node, environment);
     }
     case (is InfixExpression) {
-        value left = eval(node.left);
+        value left = eval(node.left, environment);
         
         if (is MonkeyError left) {
             return left;
         }
         
-        value right = eval(node.right);
+        value right = eval(node.right, environment);
         
         if (is MonkeyError right) {
             return right;
@@ -34,13 +37,24 @@ shared MonkeyObject eval(Node? node) {
     case (is IntegerLiteral) {
         return MonkeyInteger(node.val);
     }
+    case (is LetStatement) {
+        value val = eval(node.val, environment);
+        
+        if (is MonkeyError val) {
+            return val;
+        }
+        
+        environment[node.name.val] = val;
+        
+        return val;
+    }
     case (is PrefixExpression) {
-        value right = eval(node.right);
+        value right = eval(node.right, environment);
         
         return if (is MonkeyError right) then right else evalPrefixExpression(node.operator, right);
     }
     case (is ReturnStatement) {
-        value val = eval(node.returnValue);
+        value val = eval(node.returnValue, environment);
         
         return if (is MonkeyError val) then val else MonkeyReturnValue(val);
     }
@@ -52,11 +66,11 @@ shared MonkeyObject eval(Node? node) {
 MonkeyObject evalBangOperatorExpression(MonkeyObject right)
         => monkeyBoolean(!isTruthy(right));
 
-MonkeyObject evalBlock(BlockStatement|Program block) {
+MonkeyObject evalBlock(BlockStatement|Program block, Environment environment) {
     variable MonkeyObject result = monkeyNull;
     
     for (statement in block.statements) {
-        result = eval(statement);
+        result = eval(statement, environment);
         
         if (is MonkeyReturnValue returnValue = result) {
             return if (is Program block) then (returnValue.val else monkeyNull) else returnValue;
@@ -69,17 +83,28 @@ MonkeyObject evalBlock(BlockStatement|Program block) {
     return result;
 }
 
-MonkeyObject evalIfExpression(IfExpression expression) {
-    value condition = eval(expression.condition);
+MonkeyObject evalIdentifier(Identifier identifier, Environment environment) {
+    value name = identifier.val;
+    value val = environment[name];
+    
+    if (!exists val) {
+        return MonkeyError.identifierNotFound(name);
+    }
+    
+    return val;
+}
+
+MonkeyObject evalIfExpression(IfExpression expression, Environment environment) {
+    value condition = eval(expression.condition, environment);
     
     if (is MonkeyError condition) {
         return condition;
     }
     else if (isTruthy(condition)) {
-        return eval(expression.consequence);
+        return eval(expression.consequence, environment);
     }
     else if (exists alternative = expression.alternative) {
-        return eval(alternative);
+        return eval(alternative, environment);
     }
     else {
         return monkeyNull;

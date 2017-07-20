@@ -1,6 +1,8 @@
 shared void run() {
     print("Welcome to the Monkey REPL!");
     
+    value environment = Environment();
+    
     while (true) {
         process.write(">> ");
         
@@ -19,9 +21,9 @@ shared void run() {
             errors.each(print);
         }
         else {
-            if (exists result = eval(program)) {
-                print(result);
-            }
+            value result = eval(program, environment);
+            
+            print(result);
         }
     }
 }

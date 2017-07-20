@@ -1,13 +1,13 @@
 import ceylon.language.meta {
     type
 }
-
 import ceylon.test {
     assertEquals,
     test
 }
 
 import monkey {
+    Environment,
     Lexer,
     MonkeyBoolean,
     MonkeyError,
@@ -16,7 +16,6 @@ import monkey {
     MonkeyObject,
     Parser,
     eval,
-    monkeyFalse,
     monkeyNull,
     monkeyTrue
 }
@@ -26,7 +25,7 @@ MonkeyObject? testEval(String input) {
     value parser = Parser(lexer);
     value program = parser.parseProgram();
     
-    return eval(program);
+    return eval(program, Environment());
 }
 
 void validateBooleanObject(MonkeyObject? val, Boolean expectedValue) {
@@ -58,7 +57,8 @@ shared void testErrorHandling() {
              
              return 1;
            }",
-            MonkeyError.infixOperatorNotSupported("+", `MonkeyBoolean`) ]
+            MonkeyError.infixOperatorNotSupported("+", `MonkeyBoolean`) ],
+        [ "foobar;", MonkeyError.identifierNotFound("foobar") ]
     ];
     
     for ([ input, expectedError ] in testParameters) {
@@ -166,6 +166,20 @@ shared void testEvalIfElseExpressions() {
         else {
             assertEquals(val, expectedValue of MonkeyNull, "Value is not null");
         }
+    }
+}
+
+test
+shared void testEvalLetStatements() {
+    value testParameters = [
+        [ "let a = 5; a;", 5 ],
+        [ "let a = 5 * 5; a;", 25 ],
+        [ "let a = 5; let b = a; b;", 5 ],
+        [ "let a = 5; let b = a; let c = a + b + 5; c;", 15 ]
+    ];
+    
+    for ([ input, expectedValue ] in testParameters) {
+        validateIntegerObject(testEval(input), expectedValue);
     }
 }
 

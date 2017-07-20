@@ -4,8 +4,6 @@ import ceylon.language.meta.model {
 
 alias ObjectType => String;
 
-// TODO: The Go code uses all these types. This code may not need them.
-
 shared interface MonkeyObject {
     //shared formal ObjectType type;
     
@@ -27,6 +25,10 @@ shared MonkeyBoolean monkeyBoolean(Boolean val)
 
 shared class MonkeyError satisfies MonkeyObject {
     String message;
+    
+    shared new identifierNotFound(String identifier) {
+        message = "Identifier '``identifier``' not found";
+    }
     
     shared new infixOperatorNotSupported(String operator, Type<> type) {
         message = "Infix operator ``operator`` is not defined for type ``type``";
