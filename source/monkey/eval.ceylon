@@ -1,4 +1,4 @@
-shared MonkeyObject? eval(Node? node) {
+shared MonkeyObject eval(Node? node) {
     switch (node)
     case (is BlockStatement|Program) {
         return evalBlock(node);
@@ -32,28 +32,28 @@ shared MonkeyObject? eval(Node? node) {
         return MonkeyReturnValue(val);
     }
     else {
-        return null;
+        return monkeyNull;
     }
 }
 
-MonkeyObject? evalBangOperatorExpression(MonkeyObject? right)
+MonkeyObject evalBangOperatorExpression(MonkeyObject right)
         => monkeyBoolean(!isTruthy(right));
 
-MonkeyObject? evalBlock(BlockStatement|Program block) {
-    variable MonkeyObject? result = null;
+MonkeyObject evalBlock(BlockStatement|Program block) {
+    variable MonkeyObject result = monkeyNull;
     
     for (statement in block.statements) {
         result = eval(statement);
         
         if (is MonkeyReturnValue returnValue = result) {
-            return if (is Program block) then returnValue.val else returnValue;
+            return if (is Program block) then (returnValue.val else monkeyNull) else returnValue;
         }
     }
     
     return result;
 }
 
-MonkeyObject? evalIfExpression(IfExpression expression) {
+MonkeyObject evalIfExpression(IfExpression expression) {
     value condition = eval(expression.condition);
     
     if (isTruthy(condition)) {
@@ -67,7 +67,7 @@ MonkeyObject? evalIfExpression(IfExpression expression) {
     }
 }
 
-MonkeyObject? evalInfixExpression(String operator, MonkeyObject? left, MonkeyObject? right) {
+MonkeyObject evalInfixExpression(String operator, MonkeyObject left, MonkeyObject right) {
     if (is MonkeyInteger left, is MonkeyInteger right) {
         return evalIntegerInfixExpression(operator, left, right);
     }
@@ -80,10 +80,10 @@ MonkeyObject? evalInfixExpression(String operator, MonkeyObject? left, MonkeyObj
          }
     }
     
-    return null;
+    return monkeyNull;
 }
 
-MonkeyObject? evalIntegerInfixExpression(String operator, MonkeyInteger left, MonkeyInteger right) {
+MonkeyObject evalIntegerInfixExpression(String operator, MonkeyInteger left, MonkeyInteger right) {
     value leftValue = left.val;
     value rightValue = right.val;
     
@@ -113,19 +113,19 @@ MonkeyObject? evalIntegerInfixExpression(String operator, MonkeyInteger left, Mo
         return monkeyBoolean(leftValue != rightValue);
     }
     else {
-        return null;
+        return monkeyNull;
     }
 }
 
-MonkeyObject? evalMinusPrefixOperatorExpression(MonkeyObject? right) {
+MonkeyObject evalMinusPrefixOperatorExpression(MonkeyObject right) {
     if (!is MonkeyInteger right) {
-        return null;
+        return monkeyNull;
     }
     
     return MonkeyInteger(-right.val);
 }
 
-MonkeyObject? evalPrefixExpression(String operator, MonkeyObject? right) {
+MonkeyObject evalPrefixExpression(String operator, MonkeyObject right) {
     switch (operator)
     case ("!") {
         return evalBangOperatorExpression(right);
@@ -134,11 +134,11 @@ MonkeyObject? evalPrefixExpression(String operator, MonkeyObject? right) {
         return evalMinusPrefixOperatorExpression(right);
     }
     else {
-        return null;
+        return monkeyNull;
     }
 }
 
-Boolean isTruthy(MonkeyObject? val) {
+Boolean isTruthy(MonkeyObject val) {
     switch (val)
     case (monkeyTrue) {
         return true;
