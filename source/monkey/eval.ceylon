@@ -1,3 +1,7 @@
+import ceylon.collection {
+    ArrayList
+}
+
 import ceylon.language.meta {
     type
 }
@@ -10,8 +14,26 @@ shared MonkeyObject eval(Node? node, Environment environment) {
     case (is BooleanLiteral) {
         return monkeyBoolean(node.val);
     }
+    case (is CallExpression) {
+        value result = eval(node.func, environment);
+        
+        if (is MonkeyError result) {
+            return result;
+        }
+        
+        value arguments = evalExpressions(node.arguments else empty, environment);
+        
+        if (is MonkeyError arguments) {
+            return arguments;
+        }
+        
+        return applyFunction(result, arguments);
+    }
     case (is ExpressionStatement) {
         return eval(node.expression, environment);
+    }
+    case (is FunctionLiteral) {
+        return MonkeyFunction(node.parameters, node.body, environment);
     }
     case (is Identifier) {
         return evalIdentifier(node, environment);
@@ -63,6 +85,17 @@ shared MonkeyObject eval(Node? node, Environment environment) {
     }
 }
 
+MonkeyObject applyFunction(MonkeyObject func, MonkeyObject[] arguments) {
+    if (!is MonkeyFunction func) {
+        return MonkeyError.notAFunction(func);
+    }
+    
+    value environment = extendFunctionEnvironment(func, arguments);
+    value result = eval(func.body, environment);
+    
+    return if (is MonkeyReturnValue result) then (result.val else monkeyNull) else result;
+}
+
 MonkeyObject evalBangOperatorExpression(MonkeyObject right)
         => monkeyBoolean(!isTruthy(right));
 
@@ -81,6 +114,22 @@ MonkeyObject evalBlock(BlockStatement|Program block, Environment environment) {
     }
     
     return result;
+}
+
+MonkeyError|MonkeyObject[] evalExpressions(Expression[] expressions, Environment environment) {
+    value results = ArrayList<MonkeyObject>();
+    
+    for (expression in expressions) {
+        value result = eval(expression, environment);
+        
+        if (is MonkeyError result) {
+            return result;
+        }
+        
+        results.add(result);
+    }
+    
+    return results.sequence();
 }
 
 MonkeyObject evalIdentifier(Identifier identifier, Environment environment) {
@@ -183,6 +232,21 @@ MonkeyObject evalPrefixExpression(String operator, MonkeyObject right) {
     else {
         return MonkeyError.prefixOperatorNotSupported(operator);
     }
+}
+
+Environment extendFunctionEnvironment(MonkeyFunction func, MonkeyObject[] arguments) {
+    value environment = Environment.enclosedBy(func.environment);
+    
+    for (index in 0:func.parameters.size) {
+        value parameter = func.parameters[index];
+        value val = arguments[index] else monkeyNull;
+        
+        assert (exists parameter);
+        
+        environment[parameter.val] = val;
+    }
+    
+    return environment;
 }
 
 Boolean isTruthy(MonkeyObject val) {

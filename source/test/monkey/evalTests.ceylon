@@ -11,6 +11,7 @@ import monkey {
     Lexer,
     MonkeyBoolean,
     MonkeyError,
+    MonkeyFunction,
     MonkeyInteger,
     MonkeyNull,
     MonkeyObject,
@@ -119,6 +120,65 @@ shared void testEvalBooleanExpression() {
 }
 
 test
+shared void testEvalEnclosingEnvironments() {
+    value input = "let first = 10;
+                   let second = 10;
+                   let third = 10;
+                   
+                   let ourFunction = fn(first) {
+                     let second = 20;
+                     
+                     first + second + third;
+                   };
+                   
+                   ourFunction(20) + first + second;";
+    value expectedValue = 70;
+    
+    validateIntegerObject(testEval(input), expectedValue);
+}
+
+test
+shared void testEvalFunction() {
+    value testParameters = [
+        [ "fn(x) { x + 2; }", [ "x" ], "(x + 2)" ]
+    ];
+    
+    for ([ input, expectedParameters, expectedBody ] in testParameters) {
+        value result = assertType<MonkeyFunction>(testEval(input));
+        value parameters = result.parameters;
+        
+        assertEquals(parameters.size, expectedParameters.size, "Wrong number of parameters");
+        
+        for (index in 0:expectedParameters.size) {
+            value parameter = parameters[index];
+            value expectedParameter = expectedParameters[index];
+            
+            assert (exists parameter, exists expectedParameter);
+            
+            assertEquals(parameter.val, expectedParameter, "Wrong parameter name");
+        }
+        
+        assertEquals(result.body.string, expectedBody, "Wrong function body");
+    }
+}
+
+test
+shared void testEvalFunctionApplication() {
+    value testParameters = [
+        [ "let identity = fn(x) { x; }; identity(5);", 5 ],
+        [ "let identity = fn(x) { return x; }; identity(5);", 5 ],
+        [ "let double = fn(x) { x * 2; }; double(5);", 10 ],
+        [ "let add = fn(x, y) { x + y; }; add(5, 5);", 10 ],
+        [ "let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20 ],
+        [ "fn(x) { x; }(5)", 5 ]
+    ];
+    
+    for ([ input, expectedValue ] in testParameters) {
+        validateIntegerObject(testEval(input), expectedValue);
+    }
+}
+
+test
 shared void testEvalIntegerExpression() {
     value testParameters = [
         [ "5", 5 ],
@@ -196,7 +256,18 @@ shared void testEvalReturnStatements() {
              }
              
              return 1;
-           }", 10]
+           }", 10],
+        [ "let f = fn(x) {
+             return x;
+             x + 10;
+           };
+           f(10);", 10 ],
+        [ "let f = fn(x) {
+             let result = x + 10;
+             return result;
+             return 10;
+           };
+           f(10);", 20 ]
     ];
     
     for ([ input, expectedValue ] in testParameters) {

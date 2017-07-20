@@ -1,3 +1,6 @@
+import ceylon.language.meta {
+    type
+}
 import ceylon.language.meta.model {
     Type
 }
@@ -38,6 +41,10 @@ shared class MonkeyError satisfies MonkeyObject {
         message = "Infix operator ``operator`` does not support ``leftType`` and ``rightType``";
     }
     
+    shared new notAFunction(MonkeyObject func) {
+        message = "Not a function: ``type(func)``";
+    }
+    
     shared new prefixOperatorNotSupported(String operator) {
         message = "Prefix operator ``operator`` is not defined";
     }
@@ -47,6 +54,16 @@ shared class MonkeyError satisfies MonkeyObject {
     }
     
     string = message;
+}
+
+shared class MonkeyFunction(parameters, body, environment) satisfies MonkeyObject {
+    shared Identifier[] parameters;
+    
+    shared BlockStatement body;
+    
+    shared Environment environment;
+    
+    string = "fn(``StringBuilder().appendAll(parameters.map(Identifier.val).interpose(", ")).string``) ``body``";
 }
 
 shared class MonkeyInteger(val) satisfies MonkeyObject {
