@@ -80,6 +80,9 @@ shared MonkeyObject eval(Node? node, Environment environment) {
         
         return if (is MonkeyError val) then val else MonkeyReturnValue(val);
     }
+    case (is StringLiteral) {
+        return MonkeyString(node.val);
+    }
     else {
         return monkeyNull;
     }
@@ -162,24 +165,31 @@ MonkeyObject evalIfExpression(IfExpression expression, Environment environment) 
 
 MonkeyObject evalInfixExpression(String operator, MonkeyObject left, MonkeyObject right) {
     if (is MonkeyInteger left, is MonkeyInteger right) {
-        return evalIntegerInfixExpression(operator, left, right);
+        return evalInfixIntegerExpression(operator, left, right);
     }
     else if (is MonkeyBoolean left, is MonkeyBoolean right) {
-         if (operator == "==") {
-             return monkeyBoolean(left == right);
-         }
-         else if (operator == "!=") {
-             return monkeyBoolean(left != right);
-         }
-         else {
-             return MonkeyError.infixOperatorNotSupported(operator, `MonkeyBoolean`);
-         }
+        return evalInfixBooleanExpression(operator, left, right);
+    }
+    else if (is MonkeyString left, is MonkeyString right) {
+        return evalInfixStringExpression(operator, left, right);
     }
     
     return MonkeyError.infixTypesNotSupported(type(left), operator, type(right));
 }
 
-MonkeyObject evalIntegerInfixExpression(String operator, MonkeyInteger left, MonkeyInteger right) {
+MonkeyObject evalInfixBooleanExpression(String operator, MonkeyBoolean left, MonkeyBoolean right) {
+    if (operator == "==") {
+        return monkeyBoolean(left == right);
+    }
+    else if (operator == "!=") {
+        return monkeyBoolean(left != right);
+    }
+    else {
+        return MonkeyError.infixOperatorNotSupported(operator, `MonkeyBoolean`);
+    }
+}
+
+MonkeyObject evalInfixIntegerExpression(String operator, MonkeyInteger left, MonkeyInteger right) {
     value leftValue = left.val;
     value rightValue = right.val;
     
@@ -210,6 +220,15 @@ MonkeyObject evalIntegerInfixExpression(String operator, MonkeyInteger left, Mon
     }
     else {
         return MonkeyError.infixOperatorNotSupported(operator, `MonkeyInteger`);
+    }
+}
+
+MonkeyObject evalInfixStringExpression(String operator, MonkeyString left, MonkeyString right) {
+    if (operator == "+") {
+        return MonkeyString(left.val + right.val);
+    }
+    else {
+        return MonkeyError.infixOperatorNotSupported(operator, `MonkeyString`);
     }
 }
 

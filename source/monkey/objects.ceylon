@@ -85,3 +85,9 @@ shared class MonkeyReturnValue(val) satisfies MonkeyObject {
     
     string = val?.string else "";
 }
+
+shared class MonkeyString(val) satisfies MonkeyObject {
+    shared String val;
+    
+    string = val;
+}

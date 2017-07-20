@@ -15,6 +15,7 @@ import monkey {
     MonkeyInteger,
     MonkeyNull,
     MonkeyObject,
+    MonkeyString,
     Parser,
     eval,
     monkeyNull,
@@ -59,7 +60,8 @@ shared void testErrorHandling() {
              return 1;
            }",
             MonkeyError.infixOperatorNotSupported("+", `MonkeyBoolean`) ],
-        [ "foobar;", MonkeyError.identifierNotFound("foobar") ]
+        [ "foobar;", MonkeyError.identifierNotFound("foobar") ],
+        [ """"Hello" - "World"""", MonkeyError.infixOperatorNotSupported("-", `MonkeyString`) ]
     ];
     
     for ([ input, expectedError ] in testParameters) {
@@ -275,4 +277,20 @@ shared void testEvalReturnStatements() {
         
         validateIntegerObject(val, expectedValue);
     }
+}
+
+test
+shared void testEvalStringConcatenation() {
+    value input = """"Hello" + " " + "world!"""";
+    value result = assertType<MonkeyString>(testEval(input));
+    
+    assertEquals(result.val, "Hello world!", "String concatenation failed");
+}
+
+test
+shared void testEvalStringLiteral() {
+    value input = "\"Hello world!\"";
+    value result = assertType<MonkeyString>(testEval(input));
+    
+    assertEquals(result.val, "Hello world!", "String literal changed somehow");
 }
