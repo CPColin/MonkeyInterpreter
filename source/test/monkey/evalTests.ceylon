@@ -1,3 +1,7 @@
+import ceylon.language.meta {
+    type
+}
+
 import ceylon.test {
     assertEquals,
     test
@@ -6,12 +10,15 @@ import ceylon.test {
 import monkey {
     Lexer,
     MonkeyBoolean,
+    MonkeyError,
     MonkeyInteger,
     MonkeyNull,
     MonkeyObject,
     Parser,
     eval,
-    monkeyNull
+    monkeyFalse,
+    monkeyNull,
+    monkeyTrue
 }
 
 MonkeyObject? testEval(String input) {
@@ -35,7 +42,35 @@ void validateIntegerObject(MonkeyObject? val, Integer expectedValue) {
 }
 
 test
-shared void testBangOperator() {
+shared void testErrorHandling() {
+    value trueType = type(monkeyTrue);
+    value testParameters = [
+        [ " 5 + true;", MonkeyError.infixTypesNotSupported(`MonkeyInteger`, "+", trueType) ],
+        [ " 5 + true; 5;", MonkeyError.infixTypesNotSupported(`MonkeyInteger`, "+", trueType) ],
+        [ " -true;", MonkeyError.prefixTypeNotSupported("-", trueType) ],
+        [ " true + false;", MonkeyError.infixOperatorNotSupported("+", `MonkeyBoolean`) ],
+        [ " 5; true + false; 5;", MonkeyError.infixOperatorNotSupported("+", `MonkeyBoolean`) ],
+        [ " if (10 > 1) { true + false; }", MonkeyError.infixOperatorNotSupported("+", `MonkeyBoolean`) ],
+        [ "if (10 > 1) {
+             if (10 > 1) {
+               return true + false;
+             }
+             
+             return 1;
+           }",
+            MonkeyError.infixOperatorNotSupported("+", `MonkeyBoolean`) ]
+    ];
+    
+    for ([ input, expectedError ] in testParameters) {
+        value result = testEval(input);
+        value error = assertType<MonkeyError>(result);
+        
+        assertEquals(error.string, expectedError.string, "Incorrect error message");
+    }
+}
+
+test
+shared void testEvalBangOperator() {
     value testParameters = [
         [ "!true", false ],
         [ "!false", true ],

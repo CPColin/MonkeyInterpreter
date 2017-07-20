@@ -1,3 +1,8 @@
+import ceylon.language.meta {
+    type,
+    typeLiteral
+}
+
 import ceylon.test {
     assertEquals,
     assertFalse,
@@ -24,8 +29,8 @@ import monkey {
 }
 
 // TODO: use all over, watch for double-checking
-Type assertType<Type>(Anything val) {
-    assertTrue(val is Type, "Value is wrong type");
+Type assertType<Type>(Anything val) given Type satisfies Object {
+    assertTrue(val is Type, "Value is wrong type: expected ``typeLiteral<Type>()`` but was ``type(val)``");
     
     assert (is Type val);
     

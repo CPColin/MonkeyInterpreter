@@ -1,3 +1,7 @@
+import ceylon.language.meta {
+    type
+}
+
 shared MonkeyObject eval(Node? node) {
     switch (node)
     case (is BlockStatement|Program) {
@@ -14,7 +18,16 @@ shared MonkeyObject eval(Node? node) {
     }
     case (is InfixExpression) {
         value left = eval(node.left);
+        
+        if (is MonkeyError left) {
+            return left;
+        }
+        
         value right = eval(node.right);
+        
+        if (is MonkeyError right) {
+            return right;
+        }
         
         return evalInfixExpression(node.operator, left, right);
     }
@@ -24,12 +37,12 @@ shared MonkeyObject eval(Node? node) {
     case (is PrefixExpression) {
         value right = eval(node.right);
         
-        return evalPrefixExpression(node.operator, right);
+        return if (is MonkeyError right) then right else evalPrefixExpression(node.operator, right);
     }
     case (is ReturnStatement) {
         value val = eval(node.returnValue);
         
-        return MonkeyReturnValue(val);
+        return if (is MonkeyError val) then val else MonkeyReturnValue(val);
     }
     else {
         return monkeyNull;
@@ -48,6 +61,9 @@ MonkeyObject evalBlock(BlockStatement|Program block) {
         if (is MonkeyReturnValue returnValue = result) {
             return if (is Program block) then (returnValue.val else monkeyNull) else returnValue;
         }
+        else if (is MonkeyError error = result) {
+            return error;
+        }
     }
     
     return result;
@@ -56,7 +72,10 @@ MonkeyObject evalBlock(BlockStatement|Program block) {
 MonkeyObject evalIfExpression(IfExpression expression) {
     value condition = eval(expression.condition);
     
-    if (isTruthy(condition)) {
+    if (is MonkeyError condition) {
+        return condition;
+    }
+    else if (isTruthy(condition)) {
         return eval(expression.consequence);
     }
     else if (exists alternative = expression.alternative) {
@@ -78,9 +97,12 @@ MonkeyObject evalInfixExpression(String operator, MonkeyObject left, MonkeyObjec
          else if (operator == "!=") {
              return monkeyBoolean(left != right);
          }
+         else {
+             return MonkeyError.infixOperatorNotSupported(operator, `MonkeyBoolean`);
+         }
     }
     
-    return monkeyNull;
+    return MonkeyError.infixTypesNotSupported(type(left), operator, type(right));
 }
 
 MonkeyObject evalIntegerInfixExpression(String operator, MonkeyInteger left, MonkeyInteger right) {
@@ -113,13 +135,13 @@ MonkeyObject evalIntegerInfixExpression(String operator, MonkeyInteger left, Mon
         return monkeyBoolean(leftValue != rightValue);
     }
     else {
-        return monkeyNull;
+        return MonkeyError.infixOperatorNotSupported(operator, `MonkeyInteger`);
     }
 }
 
 MonkeyObject evalMinusPrefixOperatorExpression(MonkeyObject right) {
     if (!is MonkeyInteger right) {
-        return monkeyNull;
+        return MonkeyError.prefixTypeNotSupported("-", type(right));
     }
     
     return MonkeyInteger(-right.val);
@@ -134,7 +156,7 @@ MonkeyObject evalPrefixExpression(String operator, MonkeyObject right) {
         return evalMinusPrefixOperatorExpression(right);
     }
     else {
-        return monkeyNull;
+        return MonkeyError.prefixOperatorNotSupported(operator);
     }
 }
 
