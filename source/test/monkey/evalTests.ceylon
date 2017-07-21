@@ -43,6 +43,31 @@ void validateIntegerObject(MonkeyObject? val, Integer expectedValue) {
 }
 
 test
+shared void testBuiltInFunctions() {
+    value testParameters = [
+        [ """len("");""", 0 ],
+        [ """len("four");""", 4 ],
+        [ """len("hello world");""", 11 ],
+        [ """len(1);""", MonkeyError.argumentTypeMismatch(0, `MonkeyInteger`, `MonkeyString`) ],
+        [ """len("one", "two");""", MonkeyError.argumentCountMismatch(2, 1) ]
+    ];
+    
+    for ([ input, expectedValue ] in testParameters) {
+        value result = testEval(input);
+        
+        if (is Integer expectedValue) {
+            validateIntegerObject(result, expectedValue);
+        }
+        else {
+            value error = assertType<MonkeyError>(result);
+            value expectedError = expectedValue of MonkeyError;
+            
+            assertEquals(error.string, expectedError.string, "Incorrect error message");
+        }
+    }
+}
+
+test
 shared void testErrorHandling() {
     value trueType = type(monkeyTrue);
     value testParameters = [

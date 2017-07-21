@@ -89,14 +89,18 @@ shared MonkeyObject eval(Node? node, Environment environment) {
 }
 
 MonkeyObject applyFunction(MonkeyObject func, MonkeyObject[] arguments) {
-    if (!is MonkeyFunction func) {
+    if (is MonkeyFunction func) {
+        value environment = extendFunctionEnvironment(func, arguments);
+        value result = eval(func.body, environment);
+        
+        return if (is MonkeyReturnValue result) then (result.val else monkeyNull) else result;
+    }
+    else if (is MonkeyBuiltIn func) {
+        return func.func(arguments);
+    }
+    else {
         return MonkeyError.notAFunction(func);
     }
-    
-    value environment = extendFunctionEnvironment(func, arguments);
-    value result = eval(func.body, environment);
-    
-    return if (is MonkeyReturnValue result) then (result.val else monkeyNull) else result;
 }
 
 MonkeyObject evalBangOperatorExpression(MonkeyObject right)
@@ -137,13 +141,16 @@ MonkeyError|MonkeyObject[] evalExpressions(Expression[] expressions, Environment
 
 MonkeyObject evalIdentifier(Identifier identifier, Environment environment) {
     value name = identifier.val;
-    value val = environment[name];
     
-    if (!exists val) {
+    if (exists val = environment[name]) {
+        return val;
+    }
+    else if (exists builtInFunction = builtInFunctions[name]) {
+        return MonkeyBuiltIn(builtInFunction);
+    }
+    else {
         return MonkeyError.identifierNotFound(name);
     }
-    
-    return val;
 }
 
 MonkeyObject evalIfExpression(IfExpression expression, Environment environment) {

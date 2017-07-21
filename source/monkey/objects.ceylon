@@ -26,8 +26,22 @@ shared object monkeyFalse extends MonkeyBoolean(false) {}
 shared MonkeyBoolean monkeyBoolean(Boolean val)
     => val then monkeyTrue else monkeyFalse;
 
+shared class MonkeyBuiltIn(func) satisfies MonkeyObject {
+    shared BuiltInFunction func;
+    
+    string = "built-in function";
+}
+
 shared class MonkeyError satisfies MonkeyObject {
     String message;
+    
+    shared new argumentCountMismatch(Integer actual, Integer expected) {
+        message = "Incorrect number of arguments. Found ``actual`` but expected ``expected``.";
+    }
+    
+    shared new argumentTypeMismatch(Integer index, Type<> actual, Type<> expected) {
+        message = "Incorrect type for argument ``index``. Found ``actual`` but expected ``expected``.";
+    }
     
     shared new identifierNotFound(String identifier) {
         message = "Identifier '``identifier``' not found";
