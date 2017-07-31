@@ -8,8 +8,6 @@ import ceylon.language.meta.model {
 alias ObjectType => String;
 
 shared interface MonkeyObject {
-    //shared formal ObjectType type;
-    
     shared actual formal String string;
 }
 

@@ -24,9 +24,7 @@ Type|MonkeyError checkArgumentType<Type>(MonkeyObject[] arguments, Integer index
 
 Map<String, BuiltInFunction> builtInFunctions = map {
     "len" -> ((MonkeyObject[] arguments) {
-        value error = checkArgumentCount(arguments, 1);
-        
-        if (exists error) {
+        if (exists error = checkArgumentCount(arguments, 1)) {
             return error;
         }
         
