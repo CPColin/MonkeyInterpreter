@@ -9,6 +9,7 @@ import ceylon.test {
 import monkey {
     Environment,
     Lexer,
+    MonkeyArray,
     MonkeyBoolean,
     MonkeyError,
     MonkeyFunction,
@@ -95,6 +96,19 @@ shared void testErrorHandling() {
         
         assertEquals(error.string, expectedError.string, "Incorrect error message");
     }
+}
+
+test
+shared void testEvalArrayLiterals() {
+    value input = "[1, 2 * 3, 4 + 5]";
+    value result = assertType<MonkeyArray>(testEval(input));
+    value elements = result.elements;
+    
+    assertEquals(elements.size, 3, "Array has wrong number of elements");
+    
+    validateIntegerObject(elements[0], 1);
+    validateIntegerObject(elements[1], 6);
+    validateIntegerObject(elements[2], 9);
 }
 
 test

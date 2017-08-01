@@ -11,6 +11,12 @@ shared interface MonkeyObject {
     shared actual formal String string;
 }
 
+shared class MonkeyArray(elements) satisfies MonkeyObject {
+    shared MonkeyObject[] elements;
+    
+    string = "[``StringBuilder().appendAll(elements.map(MonkeyObject.string).interpose(", ")).string``]";
+}
+
 shared abstract class MonkeyBoolean(val)
         of monkeyTrue | monkeyFalse
         satisfies MonkeyObject {

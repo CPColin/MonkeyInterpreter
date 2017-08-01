@@ -8,6 +8,15 @@ import ceylon.language.meta {
 
 shared MonkeyObject eval(Node? node, Environment environment) {
     switch (node)
+    case (is ArrayLiteral) {
+        value elements = evalExpressions(node.elements else empty, environment);
+        
+        if (is MonkeyError elements) {
+            return elements;
+        }
+        
+        return MonkeyArray(elements);
+    }
     case (is BlockStatement|Program) {
         return evalBlock(node, environment);
     }
