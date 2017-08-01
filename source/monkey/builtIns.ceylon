@@ -23,17 +23,61 @@ Type|MonkeyError checkArgumentType<Type>(MonkeyObject[] arguments, Integer index
 }
 
 Map<String, BuiltInFunction> builtInFunctions = map {
+    "first" -> ((MonkeyObject[] arguments) {
+        if (exists error = checkArgumentCount(arguments, 1)) {
+            return error;
+        }
+        
+        switch (val = checkArgumentType<MonkeyArray>(arguments, 0))
+        case (is MonkeyArray) {
+            return if (exists first = val.elements.first) then first else monkeyNull;
+        }
+        case (is MonkeyError) {
+            return val;
+        }
+    }),
+    "last" -> ((MonkeyObject[] arguments) {
+        if (exists error = checkArgumentCount(arguments, 1)) {
+            return error;
+        }
+        
+        switch (val = checkArgumentType<MonkeyArray>(arguments, 0))
+        case (is MonkeyArray) {
+            return if (exists last = val.elements.last) then last else monkeyNull;
+        }
+        case (is MonkeyError) {
+            return val;
+        }
+    }),
     "len" -> ((MonkeyObject[] arguments) {
         if (exists error = checkArgumentCount(arguments, 1)) {
             return error;
         }
         
-        value val = checkArgumentType<MonkeyString>(arguments, 0);
-        
-        if (is MonkeyError val) {
+        switch (val = checkArgumentType<MonkeyArray|MonkeyString>(arguments, 0))
+        case (is MonkeyArray) {
+            return MonkeyInteger(val.elements.size);
+        }
+        case (is MonkeyString) {
+            return MonkeyInteger(val.val.size);
+        }
+        case (is MonkeyError) {
             return val;
         }
+    }),
+    "rest" -> ((MonkeyObject[] arguments) {
+        if (exists error = checkArgumentCount(arguments, 1)) {
+            return error;
+        }
         
-        return MonkeyInteger(val.val.size);
+        switch (val = checkArgumentType<MonkeyArray>(arguments, 0))
+        case (is MonkeyArray) {
+            value elements = val.elements;
+            
+            return elements.empty then monkeyNull else MonkeyArray(elements.rest);
+        }
+        case (is MonkeyError) {
+            return val;
+        }
     })
 };

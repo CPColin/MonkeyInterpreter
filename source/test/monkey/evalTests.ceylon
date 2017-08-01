@@ -37,15 +37,14 @@ void validateBooleanObject(MonkeyObject? val, Boolean expectedValue) {
     assertEquals(booleanValue.val, expectedValue);
 }
 
-void validateIntegerObject(MonkeyObject? val, Integer? expectedValue) {
-    if (is Null expectedValue) {
-        assertType<MonkeyNull>(val);
-    }
-    else {
-        value integerValue = assertType<MonkeyInteger>(val);
-        
-        assertEquals(integerValue.val, expectedValue);
-    }
+void validateIntegerObject(MonkeyObject? val, Integer expectedValue) {
+    value integerValue = assertType<MonkeyInteger>(val);
+    
+    assertEquals(integerValue.val, expectedValue);
+}
+
+void validateNullObject(MonkeyObject? val) {
+    assertType<MonkeyNull>(val);
 }
 
 test
@@ -54,21 +53,50 @@ shared void testBuiltInFunctions() {
         [ """len("");""", 0 ],
         [ """len("four");""", 4 ],
         [ """len("hello world");""", 11 ],
-        [ """len(1);""", MonkeyError.argumentTypeMismatch(0, `MonkeyInteger`, `MonkeyString`) ],
-        [ """len("one", "two");""", MonkeyError.argumentCountMismatch(2, 1) ]
+        [ """len(1);""", MonkeyError.argumentTypeMismatch(0, `MonkeyInteger`, `MonkeyArray|MonkeyString`) ],
+        [ """len("one", "two");""", MonkeyError.argumentCountMismatch(2, 1) ],
+        [ "len([1, 2, 3]);", 3 ],
+        [ "len([]);", 0 ],
+        [ "first([1, 2, 3]);", 1 ],
+        [ "first([]);", null ],
+        [ "first(1);", MonkeyError.argumentTypeMismatch(0, `MonkeyInteger`, `MonkeyArray`) ],
+        [ "last([1, 2, 3]);", 3 ],
+        [ "last([]);", null ],
+        [ "last(1);", MonkeyError.argumentTypeMismatch(0, `MonkeyInteger`, `MonkeyArray`) ],
+        [ "rest([1, 2, 3]);", [ 2, 3 ] ],
+        [ "rest([1]);", empty ],
+        [ "rest([]);", null ]
     ];
     
     for ([ input, expectedValue ] in testParameters) {
         value result = testEval(input);
         
-        if (is Integer expectedValue) {
+        switch (expectedValue)
+        case (is Integer) {
             validateIntegerObject(result, expectedValue);
         }
-        else {
-            value error = assertType<MonkeyError>(result);
-            value expectedError = expectedValue of MonkeyError;
+        case (is Integer[]) {
+            value array = assertType<MonkeyArray>(result);
+            value elements = array.elements;
             
-            assertEquals(error.string, expectedError.string, "Incorrect error message");
+            assertEquals(elements.size, expectedValue.size, "Incorrect number of elements");
+            
+            for (index in 0:expectedValue.size) {
+                value actualVal = elements[index];
+                value expectedVal = expectedValue[index];
+                
+                assert (is Integer expectedVal);
+                
+                validateIntegerObject(actualVal, expectedVal);
+            }
+        }
+        case (is MonkeyError) {
+            value error = assertType<MonkeyError>(result);
+            
+            assertEquals(error.string, expectedValue.string, "Incorrect error message");
+        }
+        case (null) {
+            validateNullObject(result);
         }
     }
 }
@@ -118,10 +146,16 @@ shared void testEvalArrayIndexExpressions() {
         [ "[1, 2, 3][-1]", null ]
     ];
     
-    for ([ input, expectedValue] in testParameters) {
+    for ([ input, expectedValue ] in testParameters) {
         value val = testEval(input);
         
-        validateIntegerObject(val, expectedValue);
+        switch (expectedValue)
+        case (is Integer) {
+            validateIntegerObject(val, expectedValue);
+        }
+        case (null) {
+            validateNullObject(val);
+        }
     }
 }
 
