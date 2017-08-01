@@ -25,6 +25,16 @@ shared class Program(statements)
             .string;
 }
 
+shared class ArrayLiteral(token, elements) satisfies Expression {
+    Token token;
+    
+    shared Expression[]? elements;
+    
+    tokenLiteral = token.literal;
+    
+    string = "[``if (exists elements) then StringBuilder().appendAll(elements.map(Expression.string).interpose(", ")).string else ""``]";
+}
+
 shared class BlockStatement(token, statements)
         satisfies Statement&Block {
     Token token;

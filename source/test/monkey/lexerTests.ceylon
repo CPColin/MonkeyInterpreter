@@ -31,6 +31,7 @@ shared void testNextToken() {
                      10 != 9;
                      "foobar"
                      "foo bar"
+                     [1, 2];
                      """;
     
     value expectedTokens = {
@@ -109,6 +110,12 @@ shared void testNextToken() {
         [ TokenType.semicolon, ";" ],
         [ TokenType.str, "foobar" ],
         [ TokenType.str, "foo bar" ],
+        [ TokenType.lbracket, "[" ],
+        [ TokenType.int, "1" ],
+        [ TokenType.comma, "," ],
+        [ TokenType.int, "2" ],
+        [ TokenType.rbracket, "]" ],
+        [ TokenType.semicolon, ";" ],
         [ TokenType.eof, "" ]
     };
     

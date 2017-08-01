@@ -11,6 +11,7 @@ import ceylon.test {
 }
 
 import monkey {
+    ArrayLiteral,
     BooleanLiteral,
     CallExpression,
     Expression,
@@ -480,6 +481,50 @@ shared void testOperatorPrecedenceParsing() {
         
         assertEquals(program.string, expectedString, "Incorrect AST string");
     }
+}
+
+test
+shared void testParsingArrayLiterals() {
+    value input = "[1, 2 * 3, 4 + 5]";
+    value lexer = Lexer(input);
+    value parser = Parser(lexer);
+    value program = parser.parseProgram();
+    
+    checkParserErrors(parser);
+    
+    value statements = program.statements;
+    
+    assertEquals(statements.size, 1, "Wrong number of statements");
+    
+    value statement = assertType<ExpressionStatement>(statements[0]);
+    value array = assertType<ArrayLiteral>(statement.expression);
+    value elements = array.elements else empty;
+    
+    assertEquals(elements.size, 3, "Wrong number of array elements");
+    
+    validateIntegerLiteral(elements[0], 1);
+    validateInfixExpression(elements[1], 2, "*", 3);
+    validateInfixExpression(elements[2], 4, "+", 5);
+}
+
+test
+shared void testParsingEmptyArrayLiterals() {
+    value input = "[]";
+    value lexer = Lexer(input);
+    value parser = Parser(lexer);
+    value program = parser.parseProgram();
+    
+    checkParserErrors(parser);
+    
+    value statements = program.statements;
+    
+    assertEquals(statements.size, 1, "Wrong number of statements");
+    
+    value statement = assertType<ExpressionStatement>(statements[0]);
+    value array = assertType<ArrayLiteral>(statement.expression);
+    value elements = array.elements else [""];
+    
+    assertEquals(elements.size, 0, "Wrong number of array elements");
 }
 
 test

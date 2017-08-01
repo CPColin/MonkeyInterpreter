@@ -2,7 +2,7 @@ shared abstract class TokenType
         of illegal | eof
         | ident | int | str
         | \iassign | plus | minus | bang | asterisk | slash | lt | gt | eq | notEq
-        | comma | semicolon | lparen | rparen | lbrace | rbrace
+        | comma | semicolon | lparen | rparen | lbrace | rbrace | lbracket | rbracket
         | \ifunction | \ilet | \itrue | \ifalse | \iif | \ielse | \ireturn {
     shared static object illegal extends TokenType("ILLEGAL") {}
     shared static object eof extends TokenType("EOF") {}
@@ -34,6 +34,8 @@ shared abstract class TokenType
     shared static object rparen extends TokenType(")") {}
     shared static object lbrace extends TokenType("{") {}
     shared static object rbrace extends TokenType("}") {}
+    shared static object lbracket extends TokenType("[") {}
+    shared static object rbracket extends TokenType("]") {}
     
     // Keywords
     shared static object \ifunction extends TokenType("FUNCTION") {}

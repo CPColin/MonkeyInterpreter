@@ -237,8 +237,8 @@ shared class Parser(lexer) {
         return BlockStatement(blockToken, statements.sequence());
     }
     
-    function parseCallArguments() {
-        if (peekTokenIs(TokenType.rparen)) {
+    function parseExpressionList(TokenType endTokenType) {
+        if (peekTokenIs(endTokenType)) {
             nextToken();
             
             return empty;
@@ -256,16 +256,23 @@ shared class Parser(lexer) {
             arguments.add(parseExpression(precedence.lowest));
         }
         
-        if (!expectPeek(TokenType.rparen)) {
+        if (!expectPeek(endTokenType)) {
             return null;
         }
         
         return arguments.coalesced.sequence();
     }
     
+    function parseArrayLiteral() {
+        value arrayToken = currentToken;
+        value elements = parseExpressionList(TokenType.rbracket);
+        
+        return ArrayLiteral(arrayToken, elements);
+    }
+    
     function parseCallExpression(Expression? left) {
         value callToken = currentToken;
-        value arguments = parseCallArguments();
+        value arguments = parseExpressionList(TokenType.rparen);
         
         return CallExpression(callToken, left, arguments);
     }
@@ -367,6 +374,7 @@ shared class Parser(lexer) {
         TokenType.ident -> parseIdentifier,
         TokenType.\iif -> parseIfExpression,
         TokenType.int -> parseIntegerLiteral,
+        TokenType.lbracket -> parseArrayLiteral,
         TokenType.lparen -> parseGroupedExpression,
         TokenType.minus -> parsePrefixExpression,
         TokenType.str -> parseStringLiteral,

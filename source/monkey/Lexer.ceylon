@@ -124,6 +124,12 @@ shared class Lexer(input) {
         case ('}') {
             type = TokenType.rbrace;
         }
+        case ('[') {
+            type = TokenType.lbracket;
+        }
+        case (']') {
+            type = TokenType.rbracket;
+        }
         case ('"') {
             type = TokenType.str;
             literalOverride = readString();
