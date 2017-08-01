@@ -65,7 +65,10 @@ shared void testBuiltInFunctions() {
         [ "last(1);", MonkeyError.argumentTypeMismatch(0, `MonkeyInteger`, `MonkeyArray`) ],
         [ "rest([1, 2, 3]);", [ 2, 3 ] ],
         [ "rest([1]);", empty ],
-        [ "rest([]);", null ]
+        [ "rest([]);", null ],
+        [ "push([], 1);", [ 1 ] ],
+        [ "push([1, 2], 3);", [ 1, 2, 3 ] ],
+        [ "push(1, 1);", MonkeyError.argumentTypeMismatch(0, `MonkeyInteger`, `MonkeyArray`) ]
     ];
     
     for ([ input, expectedValue ] in testParameters) {

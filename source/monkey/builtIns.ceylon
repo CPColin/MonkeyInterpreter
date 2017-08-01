@@ -65,6 +65,21 @@ Map<String, BuiltInFunction> builtInFunctions = map {
             return val;
         }
     }),
+    "push" -> ((MonkeyObject[] arguments) {
+        if (exists error = checkArgumentCount(arguments, 2)) {
+            return error;
+        }
+        
+        value array = checkArgumentType<MonkeyArray>(arguments, 0);
+        
+        if (is MonkeyError array) {
+            return array;
+        }
+        
+        value element = checkArgumentType<MonkeyObject>(arguments, 1);
+        
+        return MonkeyArray(array.elements.withTrailing(element));
+    }),
     "rest" -> ((MonkeyObject[] arguments) {
         if (exists error = checkArgumentCount(arguments, 1)) {
             return error;
