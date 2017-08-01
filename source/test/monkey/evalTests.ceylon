@@ -37,10 +37,15 @@ void validateBooleanObject(MonkeyObject? val, Boolean expectedValue) {
     assertEquals(booleanValue.val, expectedValue);
 }
 
-void validateIntegerObject(MonkeyObject? val, Integer expectedValue) {
-    value integerValue = assertType<MonkeyInteger>(val);
-    
-    assertEquals(integerValue.val, expectedValue);
+void validateIntegerObject(MonkeyObject? val, Integer? expectedValue) {
+    if (is Null expectedValue) {
+        assertType<MonkeyNull>(val);
+    }
+    else {
+        value integerValue = assertType<MonkeyInteger>(val);
+        
+        assertEquals(integerValue.val, expectedValue);
+    }
 }
 
 test
@@ -95,6 +100,28 @@ shared void testErrorHandling() {
         value error = assertType<MonkeyError>(result);
         
         assertEquals(error.string, expectedError.string, "Incorrect error message");
+    }
+}
+
+test
+shared void testEvalArrayIndexExpressions() {
+    value testParameters = [
+        [ "[1, 2, 3][0]", 1 ],
+        [ "[1, 2, 3][1]", 2 ],
+        [ "[1, 2, 3][2]", 3 ],
+        [ "let i = 0; [1][i];", 1 ],
+        [ "[1, 2, 3][1 + 1];", 3 ],
+        [ "let myArray = [1, 2, 3]; myArray[2];", 3 ],
+        [ "let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];", 6 ],
+        [ "let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]", 2 ],
+        [ "[1, 2, 3][3]", null ],
+        [ "[1, 2, 3][-1]", null ]
+    ];
+    
+    for ([ input, expectedValue] in testParameters) {
+        value val = testEval(input);
+        
+        validateIntegerObject(val, expectedValue);
     }
 }
 

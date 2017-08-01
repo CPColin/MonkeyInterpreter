@@ -50,6 +50,21 @@ shared MonkeyObject eval(Node? node, Environment environment) {
     case (is IfExpression) {
         return evalIfExpression(node, environment);
     }
+    case (is IndexExpression) {
+        value left = eval(node.left, environment);
+        
+        if (is MonkeyError left) {
+            return left;
+        }
+        
+        value index = eval(node.index, environment);
+        
+        if (is MonkeyError index) {
+            return index;
+        }
+        
+        return evalIndexExpression(left, index);
+    }
     case (is InfixExpression) {
         value left = eval(node.left, environment);
         
@@ -179,6 +194,15 @@ MonkeyObject evalIfExpression(IfExpression expression, Environment environment) 
     }
 }
 
+MonkeyObject evalIndexExpression(MonkeyObject left, MonkeyObject index) {
+    if (is MonkeyArray left, is MonkeyInteger index) {
+        return left.elements[index.val] else monkeyNull;
+    }
+    else {
+        return MonkeyError.indexTypesNotSupported(type(left), type(index));
+    }
+}
+
 MonkeyObject evalInfixExpression(String operator, MonkeyObject left, MonkeyObject right) {
     if (is MonkeyInteger left, is MonkeyInteger right) {
         return evalInfixIntegerExpression(operator, left, right);
@@ -189,8 +213,9 @@ MonkeyObject evalInfixExpression(String operator, MonkeyObject left, MonkeyObjec
     else if (is MonkeyString left, is MonkeyString right) {
         return evalInfixStringExpression(operator, left, right);
     }
-    
-    return MonkeyError.infixTypesNotSupported(type(left), operator, type(right));
+    else {
+        return MonkeyError.infixTypesNotSupported(type(left), operator, type(right));
+    }
 }
 
 MonkeyObject evalInfixBooleanExpression(String operator, MonkeyBoolean left, MonkeyBoolean right) {

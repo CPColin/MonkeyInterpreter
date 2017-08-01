@@ -51,6 +51,10 @@ shared class MonkeyError satisfies MonkeyObject {
         message = "Identifier '``identifier``' not found";
     }
     
+    shared new indexTypesNotSupported(Type<> leftType, Type<> indexType) {
+        message = "Index operator does not support ``leftType`` and ``indexType``";
+    }
+    
     shared new infixOperatorNotSupported(String operator, Type<> type) {
         message = "Infix operator ``operator`` is not defined for type ``type``";
     }
