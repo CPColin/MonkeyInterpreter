@@ -18,9 +18,12 @@ shared class Parser(lexer) {
         
         shared Integer call = 6;
         
+        shared Integer index = 7;
+        
         value precedences = map {
             TokenType.eq -> equality,
             TokenType.notEq -> equality,
+            TokenType.lbracket -> index,
             TokenType.lparen -> call,
             TokenType.lt -> lessGreater,
             TokenType.gt -> lessGreater,
@@ -325,6 +328,20 @@ shared class Parser(lexer) {
         return FunctionLiteral(functionToken, parameters, body);
     }
     
+    function parseIndexExpression(Expression? left) {
+        value indexToken = currentToken;
+        
+        nextToken();
+        
+        value index = parseExpression(precedence.lowest);
+        
+        if (!expectPeek(TokenType.rbracket)) {
+            return null;
+        }
+        
+        return IndexExpression(indexToken, left, index);
+    }
+    
     function parseIfExpression() {
         value ifToken = currentToken;
         
@@ -385,6 +402,7 @@ shared class Parser(lexer) {
         TokenType.asterisk -> parseInfixExpression,
         TokenType.eq -> parseInfixExpression,
         TokenType.gt -> parseInfixExpression,
+        TokenType.lbracket -> parseIndexExpression,
         TokenType.lparen -> parseCallExpression,
         TokenType.lt -> parseInfixExpression,
         TokenType.minus -> parseInfixExpression,

@@ -19,6 +19,7 @@ import monkey {
     FunctionLiteral,
     Identifier,
     IfExpression,
+    IndexExpression,
     InfixExpression,
     IntegerLiteral,
     LetStatement,
@@ -469,7 +470,9 @@ shared void testOperatorPrecedenceParsing() {
         [ "a + add(b * c) + d", "((a + add((b * c))) + d)" ],
         [ "add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))",
             "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))" ],
-        [ "add(a + b + c * d / f + g)", "add((((a + b) + ((c * d) / f)) + g))" ]
+        [ "add(a + b + c * d / f + g)", "add((((a + b) + ((c * d) / f)) + g))" ],
+        [ "a * [1, 2, 3, 4][b * c] * d", "((a * ([1, 2, 3, 4][(b * c)])) * d)" ],
+        [ "add(a * b[2], b[1], 2 * [1, 2][1])", "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))" ]
     ];
     
     for ([ input, expectedString ] in testParameters) {
@@ -525,6 +528,26 @@ shared void testParsingEmptyArrayLiterals() {
     value elements = array.elements else [""];
     
     assertEquals(elements.size, 0, "Wrong number of array elements");
+}
+
+test
+shared void testParsingIndexExpressions() {
+    value input = "myArray[1 + 2]";
+    value lexer = Lexer(input);
+    value parser = Parser(lexer);
+    value program = parser.parseProgram();
+    
+    checkParserErrors(parser);
+    
+    value statements = program.statements;
+    
+    assertEquals(statements.size, 1, "Wrong number of statements");
+    
+    value statement = assertType<ExpressionStatement>(statements[0]);
+    value expression = assertType<IndexExpression>(statement.expression);
+    
+    validateIdentifier(expression.left, "myArray");
+    validateInfixExpression(expression.index, 1, "+", 2);
 }
 
 test

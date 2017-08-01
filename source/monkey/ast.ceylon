@@ -118,6 +118,18 @@ shared class IfExpression(token, condition, consequence, alternative) satisfies 
     string = "if ``condition else ""`` ``consequence````if (exists alternative) then " else ``alternative``" else ""``";
 }
 
+shared class IndexExpression(token, left, index) satisfies Expression {
+    Token token;
+    
+    shared Expression? left;
+    
+    shared Expression? index;
+    
+    tokenLiteral = token.literal;
+    
+    string = "(``left else ""``[``index else ""``])";
+}
+
 shared class IntegerLiteral(token, val) satisfies Expression {
     Token token;
     
