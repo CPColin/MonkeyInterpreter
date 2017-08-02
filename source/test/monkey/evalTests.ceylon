@@ -124,7 +124,8 @@ shared void testErrorHandling() {
            }",
             MonkeyError.infixOperatorNotSupported("+", `MonkeyBoolean`) ],
         [ "foobar;", MonkeyError.identifierNotFound("foobar") ],
-        [ """"Hello" - "World"""", MonkeyError.infixOperatorNotSupported("-", `MonkeyString`) ]
+        [ """"Hello" - "World"""", MonkeyError.infixOperatorNotSupported("-", `MonkeyString`) ],
+        [ "{}[fn(x) { x; }];", MonkeyError.hashKeyTypeNotSupported(`MonkeyFunction`)]
     ];
     
     for ([ input, expectedError ] in testParameters) {
@@ -281,6 +282,31 @@ shared void testEvalFunctionApplication() {
     
     for ([ input, expectedValue ] in testParameters) {
         validateIntegerObject(testEval(input), expectedValue);
+    }
+}
+
+test
+shared void testEvalHashIndexExpressions() {
+    value testParameters = [
+        [ """{"foo": 5}["foo"]""", 5 ],
+        [ """{"foo": 5}["bar"]""", null ],
+        [ """let key = "foo"; {"foo": 5}[key]""", 5 ],
+        [ """{}["foo"]""", null ],
+        [ """{5: 5}[5]""", 5 ],
+        [ """{true: 5}[true]""", 5 ],
+        [ """{false: 5}[false]""", 5 ]
+    ];
+    
+    for ([ input, expectedValue ] in testParameters) {
+        value val = testEval(input);
+        
+        switch (expectedValue)
+        case (is Integer) {
+            validateIntegerObject(val, expectedValue);
+        }
+        case (null) {
+            validateNullObject(val);
+        }
     }
 }
 

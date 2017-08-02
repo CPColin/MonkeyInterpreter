@@ -167,6 +167,14 @@ MonkeyError|MonkeyObject[] evalExpressions(Expression[] expressions, Environment
     return results.sequence();
 }
 
+MonkeyObject evalHashIndexExpression(MonkeyHash hash, MonkeyObject index) {
+    if (!is MonkeyHashKey index) {
+        return MonkeyError.hashKeyTypeNotSupported(type(index));
+    }
+    
+    return hash.map[index] else monkeyNull;
+}
+
 MonkeyObject evalHashLiteral(HashLiteral hashLiteral, Environment environment) {
     value map = HashMap<MonkeyHashKey, MonkeyObject>();
     
@@ -227,6 +235,9 @@ MonkeyObject evalIfExpression(IfExpression expression, Environment environment) 
 MonkeyObject evalIndexExpression(MonkeyObject left, MonkeyObject index) {
     if (is MonkeyArray left, is MonkeyInteger index) {
         return left.elements[index.val] else monkeyNull;
+    }
+    else if (is MonkeyHash left) {
+        return evalHashIndexExpression(left, index);
     }
     else {
         return MonkeyError.indexTypesNotSupported(type(left), type(index));
