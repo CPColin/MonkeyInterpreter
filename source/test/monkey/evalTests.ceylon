@@ -13,6 +13,7 @@ import monkey {
     MonkeyBoolean,
     MonkeyError,
     MonkeyFunction,
+    MonkeyHash,
     MonkeyInteger,
     MonkeyNull,
     MonkeyObject,
@@ -281,6 +282,31 @@ shared void testEvalFunctionApplication() {
     for ([ input, expectedValue ] in testParameters) {
         validateIntegerObject(testEval(input), expectedValue);
     }
+}
+
+test
+shared void testEvalHashLiterals() {
+    value input = """let two = "two";
+                     {
+                       "one": 10 - 9,
+                       two: 1 + 1,
+                       "thr" + "ee": 6 / 2,
+                       4: 4,
+                       true: 5,
+                       false: 6
+                     }""";
+    value expectedEntries = [
+        "one"->1,
+        "two"->2,
+        "three"->3,
+        4->4,
+        true->5,
+        false->6
+    ];
+    value result = assertType<MonkeyHash>(testEval(input));
+    value map = result.map;
+    
+    assertEquals(map.size, expectedEntries.size, "Wrong number of entries");
 }
 
 test

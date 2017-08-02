@@ -1,5 +1,6 @@
 import ceylon.collection {
-    ArrayList
+    ArrayList,
+    HashMap
 }
 
 import ceylon.language.meta {
@@ -43,6 +44,9 @@ shared MonkeyObject eval(Node? node, Environment environment) {
     }
     case (is FunctionLiteral) {
         return MonkeyFunction(node.parameters, node.body, environment);
+    }
+    case (is HashLiteral) {
+        return evalHashLiteral(node, environment);
     }
     case (is Identifier) {
         return evalIdentifier(node, environment);
@@ -161,6 +165,32 @@ MonkeyError|MonkeyObject[] evalExpressions(Expression[] expressions, Environment
     }
     
     return results.sequence();
+}
+
+MonkeyObject evalHashLiteral(HashLiteral hashLiteral, Environment environment) {
+    value map = HashMap<MonkeyHashKey, MonkeyObject>();
+    
+    for (keyExpression->itemExpression in hashLiteral.entries) {
+        value key = eval(keyExpression, environment);
+        
+        if (is MonkeyError key) {
+            return key;
+        }
+        
+        if (!is MonkeyHashKey key) {
+            return MonkeyError.hashKeyTypeNotSupported(type(key));
+        }
+        
+        value item = eval(itemExpression, environment);
+        
+        if (is MonkeyError item) {
+            return item;
+        }
+        
+        map.put(key, item);
+    }
+    
+    return MonkeyHash(map);
 }
 
 MonkeyObject evalIdentifier(Identifier identifier, Environment environment) {

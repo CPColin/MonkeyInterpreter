@@ -19,8 +19,12 @@ shared class MonkeyArray(elements) satisfies MonkeyObject {
 
 shared abstract class MonkeyBoolean(val)
         of monkeyTrue | monkeyFalse
-        satisfies MonkeyObject {
+        satisfies MonkeyObject&MonkeyHashKey {
     shared Boolean val;
+    
+    equals(Object that) => if (is MonkeyBoolean that) then val == that.val else false;
+    
+    hash => val.hash;
     
     string = val.string;
 }
@@ -45,6 +49,10 @@ shared class MonkeyError satisfies MonkeyObject {
     
     shared new argumentTypeMismatch(Integer index, Type<> actual, Type<> expected) {
         message = "Incorrect type for argument ``index``. Found ``actual`` but expected ``expected``.";
+    }
+    
+    shared new hashKeyTypeNotSupported(Type<> actual) {
+        message = "Hash key must satisfy MonkeyHashKey. Found ``actual``.";
     }
     
     shared new identifierNotFound(String identifier) {
@@ -88,8 +96,29 @@ shared class MonkeyFunction(parameters, body, environment) satisfies MonkeyObjec
     string = "fn(``StringBuilder().appendAll(parameters.map(Identifier.val).interpose(", ")).string``) ``body``";
 }
 
-shared class MonkeyInteger(val) satisfies MonkeyObject {
+shared interface MonkeyHashKey {
+    shared actual formal Boolean equals(Object that);
+    
+    shared actual formal Integer hash;
+}
+
+shared class MonkeyHash(map) satisfies MonkeyObject {
+    shared Map<MonkeyHashKey, MonkeyObject> map;
+    
+    shared actual String string {
+        function entryString(<MonkeyHashKey->MonkeyObject> entry)
+                => "``entry.key``:``entry.item``";
+        
+        return "{``StringBuilder().appendAll(map.map(entryString).interpose(", ")).string``}";
+    }
+}
+
+shared class MonkeyInteger(val) satisfies MonkeyObject&MonkeyHashKey {
     shared Integer val;
+    
+    equals(Object that) => if (is MonkeyInteger that) then val == that.val else false;
+    
+    hash => val.hash;
     
     string = val.string;
 }
@@ -108,8 +137,12 @@ shared class MonkeyReturnValue(val) satisfies MonkeyObject {
     string = val?.string else "";
 }
 
-shared class MonkeyString(val) satisfies MonkeyObject {
+shared class MonkeyString(val) satisfies MonkeyObject&MonkeyHashKey {
     shared String val;
+    
+    equals(Object that) => if (is MonkeyString that) then val == that.val else false;
+    
+    hash => val.hash;
     
     string = val;
 }
