@@ -122,6 +122,42 @@ shared class Parser(lexer) {
         return expression;
     }
     
+    function parseHashLiteral() {
+        value hashToken = currentToken;
+        value entries = ArrayList<Expression->Expression>();
+        
+        while (!peekTokenIs(TokenType.rbrace)) {
+            nextToken();
+            
+            value key = parseExpression(precedence.lowest);
+            
+            if (!expectPeek(TokenType.colon)) {
+                return null;
+            }
+            
+            nextToken();
+            
+            value item = parseExpression(precedence.lowest);
+            
+            if (exists key, exists item) {
+                entries.add(key->item);
+            }
+            else {
+                return null;
+            }
+            
+            if (!peekTokenIs(TokenType.rbrace) && !expectPeek(TokenType.comma)) {
+                return null;
+            }
+        }
+        
+        if (!expectPeek(TokenType.rbrace)) {
+            return null;
+        }
+        
+        return HashLiteral(hashToken, entries.sequence());
+    }
+    
     function parseIdentifier() {
         return Identifier(currentToken, currentToken.literal);
     }
@@ -391,6 +427,7 @@ shared class Parser(lexer) {
         TokenType.ident -> parseIdentifier,
         TokenType.\iif -> parseIfExpression,
         TokenType.int -> parseIntegerLiteral,
+        TokenType.lbrace -> parseHashLiteral,
         TokenType.lbracket -> parseArrayLiteral,
         TokenType.lparen -> parseGroupedExpression,
         TokenType.minus -> parsePrefixExpression,

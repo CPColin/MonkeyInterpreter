@@ -2,7 +2,7 @@ shared abstract class TokenType
         of illegal | eof
         | ident | int | str
         | \iassign | plus | minus | bang | asterisk | slash | lt | gt | eq | notEq
-        | comma | semicolon | lparen | rparen | lbrace | rbrace | lbracket | rbracket
+        | comma | semicolon | colon | lparen | rparen | lbrace | rbrace | lbracket | rbracket
         | \ifunction | \ilet | \itrue | \ifalse | \iif | \ielse | \ireturn {
     shared static object illegal extends TokenType("ILLEGAL") {}
     shared static object eof extends TokenType("EOF") {}
@@ -29,6 +29,7 @@ shared abstract class TokenType
     // Delimiters
     shared static object comma extends TokenType(",") {}
     shared static object semicolon extends TokenType(";") {}
+    shared static object colon extends TokenType(":") {}
     
     shared static object lparen extends TokenType("(") {}
     shared static object rparen extends TokenType(")") {}

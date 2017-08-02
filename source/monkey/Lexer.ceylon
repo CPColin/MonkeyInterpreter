@@ -109,6 +109,9 @@ shared class Lexer(input) {
         case (';') {
             type = TokenType.semicolon;
         }
+        case (':') {
+            type = TokenType.colon;
+        }
         case (',') {
             type = TokenType.comma;
         }

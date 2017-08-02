@@ -17,6 +17,7 @@ import monkey {
     Expression,
     ExpressionStatement,
     FunctionLiteral,
+    HashLiteral,
     Identifier,
     IfExpression,
     IndexExpression,
@@ -91,6 +92,16 @@ void validateLetStatement(Statement statement, String name) {
     assertEquals(statement.name.val, name, "Incorrect identifier name");
     
     assertEquals(statement.name.tokenLiteral, name, "Incorrect identifier literal");
+}
+
+void validateStringLiteral(Expression? expression, String val) {
+    assertTrue(expression is StringLiteral, "Wrong expression type");
+    
+    assert (is StringLiteral expression);
+    
+    assertEquals(expression.val, val, "Wrong string value");
+    
+    assertEquals(expression.tokenLiteral, val.string, "Wrong token literal");
 }
 
 alias Literal => Boolean|Integer|String;
@@ -528,6 +539,63 @@ shared void testParsingEmptyArrayLiterals() {
     value elements = array.elements else [""];
     
     assertEquals(elements.size, 0, "Wrong number of array elements");
+}
+
+test
+shared void testParsingHashLiterals() {
+    value testParameters = [
+        [ "{}", empty ],
+        [ """{"one":1, "two":2, "three":3}""", [ "one"->1, "two"->2, "three"->3 ] ],
+        [ "{true:1, false:2}", [ true->1, false->2 ] ],
+        [ "{1:1, 2:2, 3:3}", [ 1->1, 2->2, 3->3 ] ],
+        [ "{1:0+1, 2:10-8, 3:15/5}", [ 1->[ 0, "+", 1 ], 2->[ 10, "-", 8 ], 3->[ 15, "/", 5 ] ] ]
+    ];
+    
+    for ([ input, expectedEntries ] in testParameters) {
+        value lexer = Lexer(input);
+        value parser = Parser(lexer);
+        value program = parser.parseProgram();
+        
+        checkParserErrors(parser);
+        
+        value statements = program.statements;
+        
+        assertEquals(statements.size, 1, "Wrong number of statements");
+        
+        value statement = assertType<ExpressionStatement>(statements[0]);
+        value hash = assertType<HashLiteral>(statement.expression);
+        value entries = hash.entries;
+        
+        assertEquals(entries.size, expectedEntries.size, "Wrong number of entries");
+        
+        for (index in 0:entries.size) {
+            value entry = entries[index];
+            value expectedEntry = expectedEntries[index];
+            
+            assert (exists entry, exists expectedEntry);
+            
+            switch (expectedKey = expectedEntry.key)
+            case (is Boolean) {
+                validateBooleanLiteral(entry.key, expectedKey);
+            }
+            case (is Integer) {
+                validateIntegerLiteral(entry.key, expectedKey);
+            }
+            case (is String) {
+                validateStringLiteral(entry.key, expectedKey);
+            }
+            
+            switch (expectedItem = expectedEntry.item)
+            case (is Integer) {
+                validateIntegerLiteral(entry.item, expectedItem);
+            }
+            case (is [Integer, String, Integer]) {
+                value [ left, operator, right] = expectedItem;
+                
+                validateInfixExpression(entry.item, left, operator, right);
+            }
+        }
+    }
 }
 
 test

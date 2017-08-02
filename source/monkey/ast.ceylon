@@ -94,6 +94,21 @@ shared class FunctionLiteral(token, parameters, body) satisfies Expression {
     string = "``tokenLiteral`` (``StringBuilder().appendAll(parameters.map(Identifier.val).interpose(", ")).string``) ``body``";
 }
 
+shared class HashLiteral(token, entries) satisfies Expression {
+    Token token;
+    
+    shared <Expression->Expression>[] entries;
+    
+    tokenLiteral = token.literal;
+    
+    shared actual String string {
+        function entryString(<Expression->Expression> entry)
+            => "``entry.key``:``entry.item``";
+        
+        return "{``StringBuilder().appendAll(entries.map(entryString).interpose(", ")).string``}";
+    }
+}
+
 shared class Identifier(token, val) satisfies Expression {
     Token token;
     
