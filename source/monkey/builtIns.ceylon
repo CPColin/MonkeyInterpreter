@@ -65,6 +65,11 @@ Map<String, BuiltInFunction> builtInFunctions = map {
             return val;
         }
     }),
+    "print" -> ((MonkeyObject[] arguments) {
+        arguments.each(print);
+        
+        return monkeyNull;
+    }),
     "push" -> ((MonkeyObject[] arguments) {
         if (exists error = checkArgumentCount(arguments, 2)) {
             return error;
