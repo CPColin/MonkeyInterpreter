@@ -52,6 +52,22 @@ void checkParserErrors(Parser parser) {
     assertEquals(errors.size, 0, "Parser has errors");
 }
 
+Type parseStatement<Type>(String input) given Type satisfies Statement {
+    value lexer = Lexer(input);
+    value parser = Parser(lexer);
+    value program = parser.parseProgram();
+    
+    checkParserErrors(parser);
+    
+    value statements = program.statements;
+    
+    assertEquals(statements.size, 1, "Should be only one statement");
+    
+    return assertType<Type>(statements[0]);
+}
+
+// TODO parseExpressionStatement
+
 void validateBooleanLiteral(Expression? expression, Boolean val) {
     assertTrue(expression is BooleanLiteral, "Wrong expression type");
     
@@ -149,21 +165,7 @@ shared void testBooleanExpressions() {
     ];
     
     for ([ input, expectedLiteral ] in testParameters) {
-        value lexer = Lexer(input);
-        value parser = Parser(lexer);
-        value program = parser.parseProgram();
-        
-        checkParserErrors(parser);
-        
-        value statements = program.statements;
-        
-        assertEquals(statements.size, 1, "Should be only one statement");
-        
-        value statement = statements[0];
-        
-        assertTrue(statement is ExpressionStatement, "Incorrect statement type");
-        
-        assert (is ExpressionStatement statement);
+        value statement = parseStatement<ExpressionStatement>(input);
         
         validateBooleanLiteral(statement.expression, expectedLiteral);
     }
@@ -172,17 +174,7 @@ shared void testBooleanExpressions() {
 test
 shared void testCallExpressionParsing() {
     value input = "add(1, 2 * 3, 4 + 5);";
-    value lexer = Lexer(input);
-    value parser = Parser(lexer);
-    value program = parser.parseProgram();
-    
-    checkParserErrors(parser);
-    
-    value statements = program.statements;
-    
-    assertEquals(statements.size, 1, "Wrong number of statements");
-    
-    value statement = assertType<ExpressionStatement>(statements[0]);
+    value statement = parseStatement<ExpressionStatement>(input);
     value expression = assertType<CallExpression>(statement.expression);
     
     validateIdentifier(expression.func, "add");
@@ -205,13 +197,7 @@ shared void testCallExpressionParameterParsing() {
     ];
     
     for ([ input, expectedIdentifier, expectedArguments ] in testParameters) {
-        value lexer = Lexer(input);
-        value parser = Parser(lexer);
-        value program = parser.parseProgram();
-        
-        checkParserErrors(parser);
-        
-        value statement = assertType<ExpressionStatement>(program.statements[0]);
+        value statement = parseStatement<ExpressionStatement>(input);
         value expression = assertType<CallExpression>(statement.expression);
         
         validateIdentifier(expression.func, expectedIdentifier);
@@ -234,17 +220,7 @@ shared void testCallExpressionParameterParsing() {
 test
 shared void testFunctionLiteralParsing() {
     value input = "fn (x, y) { x + y; }";
-    value lexer = Lexer(input);
-    value parser = Parser(lexer);
-    value program = parser.parseProgram();
-    
-    checkParserErrors(parser);
-    
-    value statements = program.statements;
-    
-    assertEquals(statements.size, 1, "Wrong number of statements");
-    
-    value statement = assertType<ExpressionStatement>(statements[0]);
+    value statement = parseStatement<ExpressionStatement>(input);
     value literal = assertType<FunctionLiteral>(statement.expression);
     value parameters = literal.parameters;
     
@@ -271,13 +247,7 @@ shared void testFunctionParameterParsing() {
     ];
     
     for ([ input, expectedParameters ] in testParameters) {
-        value lexer = Lexer(input);
-        value parser = Parser(lexer);
-        value program = parser.parseProgram();
-        
-        checkParserErrors(parser);
-        
-        value statement = assertType<ExpressionStatement>(program.statements[0]);
+        value statement = parseStatement<ExpressionStatement>(input);
         value functionLiteral = assertType<FunctionLiteral>(statement.expression);
         value parameters = functionLiteral.parameters;
         
@@ -329,19 +299,7 @@ shared void testIdentifierExpression() {
 test
 shared void testIfExpression() {
     value input = "if (x < y) { x }";
-    
-    value lexer = Lexer(input);
-    value parser = Parser(lexer);
-    value program = parser.parseProgram();
-    
-    checkParserErrors(parser);
-    
-    value statements = program.statements;
-    
-    assertEquals(statements.size, 1, "Wrong number of statements");
-    
-    value statement = assertType<ExpressionStatement>(statements[0]);
-    
+    value statement = parseStatement<ExpressionStatement>(input);
     value expression = assertType<IfExpression>(statement.expression);
     
     validateInfixExpression(expression.condition, "x", "<", "y");
@@ -360,19 +318,7 @@ shared void testIfExpression() {
 test
 shared void testIfElseExpression() {
     value input = "if (x < y) { x } else { y }";
-    
-    value lexer = Lexer(input);
-    value parser = Parser(lexer);
-    value program = parser.parseProgram();
-    
-    checkParserErrors(parser);
-    
-    value statements = program.statements;
-    
-    assertEquals(statements.size, 1, "Wrong number of statements");
-    
-    value statement = assertType<ExpressionStatement>(statements[0]);
-    
+    value statement = parseStatement<ExpressionStatement>(input);
     value expression = assertType<IfExpression>(statement.expression);
     
     validateInfixExpression(expression.condition, "x", "<", "y");
@@ -435,17 +381,7 @@ shared void testLetStatements() {
     ];
         
     for ([ input, expectedIdentifier, expectedValue ] in testParameters) {
-        value lexer = Lexer(input);
-        value parser = Parser(lexer);
-        value program = parser.parseProgram();
-        
-        checkParserErrors(parser);
-        
-        value statements = program.statements;
-        
-        assertEquals(statements.size, 1, "Wrong number of statements");
-        
-        value statement = assertType<LetStatement>(statements[0]);
+        value statement = parseStatement<LetStatement>(input);
         
         validateLetStatement(statement, expectedIdentifier);
         
@@ -500,17 +436,7 @@ shared void testOperatorPrecedenceParsing() {
 test
 shared void testParsingArrayLiterals() {
     value input = "[1, 2 * 3, 4 + 5]";
-    value lexer = Lexer(input);
-    value parser = Parser(lexer);
-    value program = parser.parseProgram();
-    
-    checkParserErrors(parser);
-    
-    value statements = program.statements;
-    
-    assertEquals(statements.size, 1, "Wrong number of statements");
-    
-    value statement = assertType<ExpressionStatement>(statements[0]);
+    value statement = parseStatement<ExpressionStatement>(input);
     value array = assertType<ArrayLiteral>(statement.expression);
     value elements = array.elements else empty;
     
@@ -524,17 +450,7 @@ shared void testParsingArrayLiterals() {
 test
 shared void testParsingEmptyArrayLiterals() {
     value input = "[]";
-    value lexer = Lexer(input);
-    value parser = Parser(lexer);
-    value program = parser.parseProgram();
-    
-    checkParserErrors(parser);
-    
-    value statements = program.statements;
-    
-    assertEquals(statements.size, 1, "Wrong number of statements");
-    
-    value statement = assertType<ExpressionStatement>(statements[0]);
+    value statement = parseStatement<ExpressionStatement>(input);
     value array = assertType<ArrayLiteral>(statement.expression);
     value elements = array.elements else [""];
     
@@ -552,17 +468,7 @@ shared void testParsingHashLiterals() {
     ];
     
     for ([ input, expectedEntries ] in testParameters) {
-        value lexer = Lexer(input);
-        value parser = Parser(lexer);
-        value program = parser.parseProgram();
-        
-        checkParserErrors(parser);
-        
-        value statements = program.statements;
-        
-        assertEquals(statements.size, 1, "Wrong number of statements");
-        
-        value statement = assertType<ExpressionStatement>(statements[0]);
+        value statement = parseStatement<ExpressionStatement>(input);
         value hash = assertType<HashLiteral>(statement.expression);
         value entries = hash.entries;
         
@@ -601,17 +507,7 @@ shared void testParsingHashLiterals() {
 test
 shared void testParsingIndexExpressions() {
     value input = "myArray[1 + 2]";
-    value lexer = Lexer(input);
-    value parser = Parser(lexer);
-    value program = parser.parseProgram();
-    
-    checkParserErrors(parser);
-    
-    value statements = program.statements;
-    
-    assertEquals(statements.size, 1, "Wrong number of statements");
-    
-    value statement = assertType<ExpressionStatement>(statements[0]);
+    value statement = parseStatement<ExpressionStatement>(input);
     value expression = assertType<IndexExpression>(statement.expression);
     
     validateIdentifier(expression.left, "myArray");
@@ -635,21 +531,7 @@ shared void testParsingInfixExpressions() {
     ];
     
     for ([ input, expectedLeftLiteral, expectedOperator, expectedRightLiteral ] in testParameters) {
-        value lexer = Lexer(input);
-        value parser = Parser(lexer);
-        value program = parser.parseProgram();
-        
-        checkParserErrors(parser);
-        
-        value statements = program.statements;
-        
-        assertEquals(statements.size, 1, "Should be only one statement");
-        
-        value statement = statements[0];
-        
-        assertTrue(statement is ExpressionStatement, "Incorrect statement type");
-        
-        assert (is ExpressionStatement statement);
+        value statement = parseStatement<ExpressionStatement>(input);
         
         validateInfixExpression(statement.expression,
             expectedLeftLiteral, expectedOperator, expectedRightLiteral);
@@ -666,22 +548,7 @@ shared void testParsingPrefixExpressions() {
     ];
     
     for ([ input, expectedOperator, expectedLiteral ] in testParameters) {
-        value lexer = Lexer(input);
-        value parser = Parser(lexer);
-        value program = parser.parseProgram();
-        
-        checkParserErrors(parser);
-        
-        value statements = program.statements;
-        
-        assertEquals(statements.size, 1, "Should be only one statement");
-        
-        value statement = statements[0];
-        
-        assertTrue(statement is ExpressionStatement, "Incorrect statement type");
-        
-        assert (is ExpressionStatement statement);
-        
+        value statement = parseStatement<ExpressionStatement>(input);
         value expression = statement.expression;
         
         assertTrue(expression is PrefixExpression);
@@ -703,17 +570,9 @@ shared void testReturnStatements() {
     ];
     
     for ([ input, expectedValue ] in testParameters) {
-        value lexer = Lexer(input);
-        value parser = Parser(lexer);
-        value program = parser.parseProgram();
+        value statement = parseStatement<ReturnStatement>(input);
         
-        checkParserErrors(parser);
-        
-        value statements = program.statements;
-        
-        assertEquals(statements.size, 1, "Wrong number of statements");
-        
-        validateReturnStatement(statements[0], expectedValue);
+        validateReturnStatement(statement, expectedValue);
     }
 }
 
@@ -721,17 +580,7 @@ test
 shared void testStringLiteral() {
     value input = "\"hello world\"";
     value expectedValue = "hello world";
-    value lexer = Lexer(input);
-    value parser = Parser(lexer);
-    value program = parser.parseProgram();
-    
-    checkParserErrors(parser);
-    
-    value statements = program.statements;
-    
-    assertEquals(statements.size, 1, "Wrong number of statements");
-    
-    value statement = assertType<ExpressionStatement>(statements[0]);
+    value statement = parseStatement<ExpressionStatement>(input);
     value literal = assertType<StringLiteral>(statement.expression);
     
     assertEquals(literal.val, expectedValue, "Wrong string value");
