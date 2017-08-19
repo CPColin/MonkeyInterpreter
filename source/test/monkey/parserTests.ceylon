@@ -66,7 +66,11 @@ Type parseStatement<Type>(String input) given Type satisfies Statement {
     return assertType<Type>(statements[0]);
 }
 
-// TODO parseExpressionStatement
+Type parseExpressionStatement<Type>(String input) given Type satisfies Expression {
+    value statement = parseStatement<ExpressionStatement>(input);
+    
+    return assertType<Type>(statement.expression);
+}
 
 void validateBooleanLiteral(Expression? expression, Boolean val) {
     assertTrue(expression is BooleanLiteral, "Wrong expression type");
@@ -165,17 +169,16 @@ shared void testBooleanExpressions() {
     ];
     
     for ([ input, expectedLiteral ] in testParameters) {
-        value statement = parseStatement<ExpressionStatement>(input);
+        value expression = parseExpressionStatement<BooleanLiteral>(input);
         
-        validateBooleanLiteral(statement.expression, expectedLiteral);
+        validateBooleanLiteral(expression, expectedLiteral);
     }
 }
 
 test
 shared void testCallExpressionParsing() {
     value input = "add(1, 2 * 3, 4 + 5);";
-    value statement = parseStatement<ExpressionStatement>(input);
-    value expression = assertType<CallExpression>(statement.expression);
+    value expression = parseExpressionStatement<CallExpression>(input);
     
     validateIdentifier(expression.func, "add");
     
@@ -197,8 +200,7 @@ shared void testCallExpressionParameterParsing() {
     ];
     
     for ([ input, expectedIdentifier, expectedArguments ] in testParameters) {
-        value statement = parseStatement<ExpressionStatement>(input);
-        value expression = assertType<CallExpression>(statement.expression);
+        value expression = parseExpressionStatement<CallExpression>(input);
         
         validateIdentifier(expression.func, expectedIdentifier);
         
@@ -220,8 +222,7 @@ shared void testCallExpressionParameterParsing() {
 test
 shared void testFunctionLiteralParsing() {
     value input = "fn (x, y) { x + y; }";
-    value statement = parseStatement<ExpressionStatement>(input);
-    value literal = assertType<FunctionLiteral>(statement.expression);
+    value literal = parseExpressionStatement<FunctionLiteral>(input);
     value parameters = literal.parameters;
     
     assertEquals(parameters.size, 2, "Wrong number of parameters");
@@ -247,8 +248,7 @@ shared void testFunctionParameterParsing() {
     ];
     
     for ([ input, expectedParameters ] in testParameters) {
-        value statement = parseStatement<ExpressionStatement>(input);
-        value functionLiteral = assertType<FunctionLiteral>(statement.expression);
+        value functionLiteral = parseExpressionStatement<FunctionLiteral>(input);
         value parameters = functionLiteral.parameters;
         
         assertEquals(parameters.size, expectedParameters.size, "Wrong number of parameters");
@@ -299,8 +299,7 @@ shared void testIdentifierExpression() {
 test
 shared void testIfExpression() {
     value input = "if (x < y) { x }";
-    value statement = parseStatement<ExpressionStatement>(input);
-    value expression = assertType<IfExpression>(statement.expression);
+    value expression = parseExpressionStatement<IfExpression>(input);
     
     validateInfixExpression(expression.condition, "x", "<", "y");
     
@@ -318,8 +317,7 @@ shared void testIfExpression() {
 test
 shared void testIfElseExpression() {
     value input = "if (x < y) { x } else { y }";
-    value statement = parseStatement<ExpressionStatement>(input);
-    value expression = assertType<IfExpression>(statement.expression);
+    value expression = parseExpressionStatement<IfExpression>(input);
     
     validateInfixExpression(expression.condition, "x", "<", "y");
     
@@ -436,8 +434,7 @@ shared void testOperatorPrecedenceParsing() {
 test
 shared void testParsingArrayLiterals() {
     value input = "[1, 2 * 3, 4 + 5]";
-    value statement = parseStatement<ExpressionStatement>(input);
-    value array = assertType<ArrayLiteral>(statement.expression);
+    value array = parseExpressionStatement<ArrayLiteral>(input);
     value elements = array.elements else empty;
     
     assertEquals(elements.size, 3, "Wrong number of array elements");
@@ -450,8 +447,7 @@ shared void testParsingArrayLiterals() {
 test
 shared void testParsingEmptyArrayLiterals() {
     value input = "[]";
-    value statement = parseStatement<ExpressionStatement>(input);
-    value array = assertType<ArrayLiteral>(statement.expression);
+    value array = parseExpressionStatement<ArrayLiteral>(input);
     value elements = array.elements else [""];
     
     assertEquals(elements.size, 0, "Wrong number of array elements");
@@ -468,8 +464,7 @@ shared void testParsingHashLiterals() {
     ];
     
     for ([ input, expectedEntries ] in testParameters) {
-        value statement = parseStatement<ExpressionStatement>(input);
-        value hash = assertType<HashLiteral>(statement.expression);
+        value hash = parseExpressionStatement<HashLiteral>(input);
         value entries = hash.entries;
         
         assertEquals(entries.size, expectedEntries.size, "Wrong number of entries");
@@ -507,8 +502,7 @@ shared void testParsingHashLiterals() {
 test
 shared void testParsingIndexExpressions() {
     value input = "myArray[1 + 2]";
-    value statement = parseStatement<ExpressionStatement>(input);
-    value expression = assertType<IndexExpression>(statement.expression);
+    value expression = parseExpressionStatement<IndexExpression>(input);
     
     validateIdentifier(expression.left, "myArray");
     validateInfixExpression(expression.index, 1, "+", 2);
@@ -531,9 +525,9 @@ shared void testParsingInfixExpressions() {
     ];
     
     for ([ input, expectedLeftLiteral, expectedOperator, expectedRightLiteral ] in testParameters) {
-        value statement = parseStatement<ExpressionStatement>(input);
+        value expression = parseExpressionStatement<InfixExpression>(input);
         
-        validateInfixExpression(statement.expression,
+        validateInfixExpression(expression,
             expectedLeftLiteral, expectedOperator, expectedRightLiteral);
     }
 }
@@ -548,12 +542,7 @@ shared void testParsingPrefixExpressions() {
     ];
     
     for ([ input, expectedOperator, expectedLiteral ] in testParameters) {
-        value statement = parseStatement<ExpressionStatement>(input);
-        value expression = statement.expression;
-        
-        assertTrue(expression is PrefixExpression);
-        
-        assert (is PrefixExpression expression);
+        value expression = parseExpressionStatement<PrefixExpression>(input);
         
         assertEquals(expression.operator, expectedOperator, "Incorrect operator");
         
@@ -580,8 +569,7 @@ test
 shared void testStringLiteral() {
     value input = "\"hello world\"";
     value expectedValue = "hello world";
-    value statement = parseStatement<ExpressionStatement>(input);
-    value literal = assertType<StringLiteral>(statement.expression);
+    value literal = parseExpressionStatement<StringLiteral>(input);
     
     assertEquals(literal.val, expectedValue, "Wrong string value");
 }
