@@ -7,6 +7,7 @@ import ceylon.test {
     assertEquals,
     assertFalse,
     assertTrue,
+    parameters,
     test
 }
 
@@ -124,7 +125,7 @@ void validateStringLiteral(Expression? expression, String val) {
     assertEquals(expression.tokenLiteral, val.string, "Wrong token literal");
 }
 
-alias Literal => Boolean|Integer|String;
+shared alias Literal => Boolean|Integer|String;
 
 void validateLiteralExpression(Expression? expression, Literal val) {
     switch (val)
@@ -161,18 +162,17 @@ void validateReturnStatement(Statement? statement, Literal expectedReturnValue) 
     validateLiteralExpression(statement.returnValue, expectedReturnValue);
 }
 
+{[ String, Boolean ]*} testBooleanExpressionsParameters = {
+    [ "true", true ],
+    [ "false", false ]
+};
+
 test
-shared void testBooleanExpressions() {
-    value testParameters = [
-        [ "true", true ],
-        [ "false", false ]
-    ];
+parameters(`value testBooleanExpressionsParameters`)
+shared void testBooleanExpressions(String input, Boolean expectedLiteral) {
+    value expression = parseExpressionStatement<BooleanLiteral>(input);
     
-    for ([ input, expectedLiteral ] in testParameters) {
-        value expression = parseExpressionStatement<BooleanLiteral>(input);
-        
-        validateBooleanLiteral(expression, expectedLiteral);
-    }
+    validateBooleanLiteral(expression, expectedLiteral);
 }
 
 test
@@ -191,31 +191,31 @@ shared void testCallExpressionParsing() {
     validateInfixExpression(arguments[2], 4, "+", 5);
 }
 
-test
-shared void testCallExpressionParameterParsing() {
-    value testParameters = [
+{[ String, String, String[] ]*} testCallExpressionParameterParsingParameters = {
     [ "add();", "add", empty ],
     [ "add(1);", "add", [ "1" ] ],
     [ "add(1, 2 * 3, 4 + 5);", "add", [ "1", "(2 * 3)", "(4 + 5)" ] ]
-    ];
+};
     
-    for ([ input, expectedIdentifier, expectedArguments ] in testParameters) {
-        value expression = parseExpressionStatement<CallExpression>(input);
+test
+parameters(`value testCallExpressionParameterParsingParameters`)
+shared void testCallExpressionParameterParsing(String input, String expectedIdentifier,
+        String[] expectedArguments) {
+    value expression = parseExpressionStatement<CallExpression>(input);
+    
+    validateIdentifier(expression.func, expectedIdentifier);
+    
+    value arguments = expression.arguments else empty;
+    
+    assertEquals(arguments.size, expectedArguments.size, "Wrong number of arguments");
+    
+    for (index in 0:arguments.size) {
+        value argument = arguments[index];
+        value expectedArgument = expectedArguments[index];
         
-        validateIdentifier(expression.func, expectedIdentifier);
+        assert (exists argument, exists expectedArgument);
         
-        value arguments = expression.arguments else empty;
-        
-        assertEquals(arguments.size, expectedArguments.size, "Wrong number of arguments");
-        
-        for (index in 0:arguments.size) {
-            value argument = arguments[index];
-            value expectedArgument = expectedArguments[index];
-            
-            assert (exists argument, exists expectedArgument);
-            
-            assertEquals(argument.string, expectedArgument, "Wrong AST string for argument");
-        }
+        assertEquals(argument.string, expectedArgument, "Wrong AST string for argument");
     }
 }
 
@@ -239,61 +239,40 @@ shared void testFunctionLiteralParsing() {
     validateInfixExpression(bodyStatement.expression, "x", "+", "y");
 }
 
+{[ String, String[] ]*} testFunctionParameterParsingParameters = {
+    [ "fn() {};", empty ],
+    [ "fn(x) {};", [ "x" ] ],
+    [ "fn(x, y, z) {};", [ "x", "y", "z" ] ]
+};
+
 test
-shared void testFunctionParameterParsing() {
-    value testParameters = [
-        [ "fn() {};", empty ],
-        [ "fn(x) {};", [ "x" ] ],
-        [ "fn(x, y, z) {};", [ "x", "y", "z" ] ]
-    ];
+parameters(`value testFunctionParameterParsingParameters`)
+shared void testFunctionParameterParsing(String input, String[] expectedParameters) {
+    value functionLiteral = parseExpressionStatement<FunctionLiteral>(input);
+    value parameters = functionLiteral.parameters;
     
-    for ([ input, expectedParameters ] in testParameters) {
-        value functionLiteral = parseExpressionStatement<FunctionLiteral>(input);
-        value parameters = functionLiteral.parameters;
+    assertEquals(parameters.size, expectedParameters.size, "Wrong number of parameters");
+    
+    for (index in 0:parameters.size) {
+        value parameter = parameters[index];
+        value expectedParameter = expectedParameters[index];
         
-        assertEquals(parameters.size, expectedParameters.size, "Wrong number of parameters");
+        assert (exists parameter, exists expectedParameter);
         
-        for (index in 0:parameters.size) {
-            value parameter = parameters[index];
-            value expectedParameter = expectedParameters[index];
-            
-            assert (exists parameter, exists expectedParameter);
-            
-            validateLiteralExpression(parameter, expectedParameter);
-        }
+        validateLiteralExpression(parameter, expectedParameter);
     }
 }
 
+{[ String, String ]*} testIdentifierExpressionParameters = {
+    [ "foobar;", "foobar" ]
+};
+
 test
-shared void testIdentifierExpression() {
-    value input = "foobar;";
+parameters(`value testIdentifierExpressionParameters`)
+shared void testIdentifierExpression(String input, String expectedIdentifier) {
+    value statement = parseStatement<ExpressionStatement>(input);
     
-    value expectedIdentifiers = [
-        "foobar"
-    ];
-    
-    value lexer = Lexer(input);
-    value parser = Parser(lexer);
-    value program = parser.parseProgram();
-    
-    checkParserErrors(parser);
-    
-    value statements = program.statements;
-    
-    assertEquals(statements.size, expectedIdentifiers.size, "Wrong number of statements");
-    
-    for (index in 0:statements.size) {
-        value statement = statements[index];
-        value expectedIdentifier = expectedIdentifiers[index];
-        
-        assert (exists statement, exists expectedIdentifier);
-        
-        assertTrue(statement is ExpressionStatement, "Incorrect statement type");
-        
-        assert (is ExpressionStatement statement);
-        
-        validateLiteralExpression(statement.expression, expectedIdentifier);
-    }
+    validateLiteralExpression(statement.expression, expectedIdentifier);
 }
 
 test
@@ -338,97 +317,75 @@ shared void testIfElseExpression() {
     validateIdentifier(alternative.expression, "y");
 }
 
+{[ String, Integer ]*} testIntegerLiteralExpressionParameters = {
+    [ "5", 5 ]
+};
+
 test
-shared void testIntegerLiteralExpression() {
-    value input = "5;";
+parameters(`value testIntegerLiteralExpressionParameters`)
+shared void testIntegerLiteralExpression(String input, Integer expectedLiteral) {
+    value statement = parseStatement<ExpressionStatement>(input);
     
-    value expectedLiterals = [
-        5
-    ];
+    validateLiteralExpression(statement.expression, expectedLiteral);
+}
+
+{[ String, String, Literal ]*} testLetStatementsParameters = {
+    [ "let x = 5;", "x", 5 ],
+    [ "let y = true;", "y", true ],
+    [ "let foobar = y;", "foobar", "y" ]
+};
+
+test
+parameters(`value testLetStatementsParameters`)
+shared void testLetStatements(String input, String expectedIdentifier, Literal expectedValue) {
+    value statement = parseStatement<LetStatement>(input);
     
+    validateLetStatement(statement, expectedIdentifier);
+    
+    validateLiteralExpression(statement.val, expectedValue);
+}
+
+{[ String, String ]*} testOperatorPrecedenceParsingParameters = {
+    [ "-a * b", "((-a) * b)" ],
+    [ "!-a", "(!(-a))" ],
+    [ "a + b + c", "((a + b) + c)" ],
+    [ "a + b - c", "((a + b) - c)" ],
+    [ "a * b * c", "((a * b) * c)" ],
+    [ "a * b / c", "((a * b) / c)" ],
+    [ "a + b / c", "(a + (b / c))" ],
+    [ "a + b * c + d / e - f", "(((a + (b * c)) + (d / e)) - f)" ],
+    [ "3 + 4; -5 * 5", "(3 + 4)
+                        ((-5) * 5)" ],
+    [ "5 > 4 == 3 < 4", "((5 > 4) == (3 < 4))" ],
+    [ "5 < 4 != 3 > 4", "((5 < 4) != (3 > 4))" ],
+    [ "3 + 4 * 5 == 3 * 1 + 4 * 5", "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))" ],
+    [ "true", "true" ],
+    [ "false", "false" ],
+    [ "3 > 5 == false", "((3 > 5) == false)" ],
+    [ "3 < 5 == true", "((3 < 5) == true)" ],
+    [ "1 + (2 + 3) + 4", "((1 + (2 + 3)) + 4)" ],
+    [ "(5 + 5) * 2", "((5 + 5) * 2)" ],
+    [ "2 / (5 + 5)", "(2 / (5 + 5))" ],
+    [ "-(5 + 5)", "(-(5 + 5))" ],
+    [ "!(true == true)", "(!(true == true))" ],
+    [ "a + add(b * c) + d", "((a + add((b * c))) + d)" ],
+    [ "add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))",
+    "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))" ],
+    [ "add(a + b + c * d / f + g)", "add((((a + b) + ((c * d) / f)) + g))" ],
+    [ "a * [1, 2, 3, 4][b * c] * d", "((a * ([1, 2, 3, 4][(b * c)])) * d)" ],
+    [ "add(a * b[2], b[1], 2 * [1, 2][1])", "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))" ]
+};
+
+test
+parameters(`value testOperatorPrecedenceParsingParameters`)
+shared void testOperatorPrecedenceParsing(String input, String expectedString) {
     value lexer = Lexer(input);
     value parser = Parser(lexer);
     value program = parser.parseProgram();
     
     checkParserErrors(parser);
     
-    value statements = program.statements;
-    
-    assertEquals(statements.size, expectedLiterals.size, "Wrong number of statements");
-    
-    for (index in 0:statements.size) {
-        value statement = statements[index];
-        value expectedLiteral = expectedLiterals[index];
-        
-        assert (exists statement, exists expectedLiteral);
-        
-        assertTrue(statement is ExpressionStatement, "Incorrect statement type");
-        
-        assert (is ExpressionStatement statement);
-        
-        validateLiteralExpression(statement.expression, expectedLiteral);
-    }
-}
-
-test
-shared void testLetStatements() {
-    value testParameters = [
-        [ "let x = 5;", "x", 5 ],
-        [ "let y = true;", "y", true ],
-        [ "let foobar = y;", "foobar", "y" ]
-    ];
-        
-    for ([ input, expectedIdentifier, expectedValue ] in testParameters) {
-        value statement = parseStatement<LetStatement>(input);
-        
-        validateLetStatement(statement, expectedIdentifier);
-        
-        validateLiteralExpression(statement.val, expectedValue);
-    }
-}
-
-test
-shared void testOperatorPrecedenceParsing() {
-    value testParameters = [
-        [ "-a * b", "((-a) * b)" ],
-        [ "!-a", "(!(-a))" ],
-        [ "a + b + c", "((a + b) + c)" ],
-        [ "a + b - c", "((a + b) - c)" ],
-        [ "a * b * c", "((a * b) * c)" ],
-        [ "a * b / c", "((a * b) / c)" ],
-        [ "a + b / c", "(a + (b / c))" ],
-        [ "a + b * c + d / e - f", "(((a + (b * c)) + (d / e)) - f)" ],
-        [ "3 + 4; -5 * 5", "(3 + 4)
-                            ((-5) * 5)" ],
-        [ "5 > 4 == 3 < 4", "((5 > 4) == (3 < 4))" ],
-        [ "5 < 4 != 3 > 4", "((5 < 4) != (3 > 4))" ],
-        [ "3 + 4 * 5 == 3 * 1 + 4 * 5", "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))" ],
-        [ "true", "true" ],
-        [ "false", "false" ],
-        [ "3 > 5 == false", "((3 > 5) == false)" ],
-        [ "3 < 5 == true", "((3 < 5) == true)" ],
-        [ "1 + (2 + 3) + 4", "((1 + (2 + 3)) + 4)" ],
-        [ "(5 + 5) * 2", "((5 + 5) * 2)" ],
-        [ "2 / (5 + 5)", "(2 / (5 + 5))" ],
-        [ "-(5 + 5)", "(-(5 + 5))" ],
-        [ "!(true == true)", "(!(true == true))" ],
-        [ "a + add(b * c) + d", "((a + add((b * c))) + d)" ],
-        [ "add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))",
-            "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))" ],
-        [ "add(a + b + c * d / f + g)", "add((((a + b) + ((c * d) / f)) + g))" ],
-        [ "a * [1, 2, 3, 4][b * c] * d", "((a * ([1, 2, 3, 4][(b * c)])) * d)" ],
-        [ "add(a * b[2], b[1], 2 * [1, 2][1])", "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))" ]
-    ];
-    
-    for ([ input, expectedString ] in testParameters) {
-        value lexer = Lexer(input);
-        value parser = Parser(lexer);
-        value program = parser.parseProgram();
-        
-        checkParserErrors(parser);
-        
-        assertEquals(program.string, expectedString, "Incorrect AST string");
-    }
+    assertEquals(program.string, expectedString, "Incorrect AST string");
 }
 
 test
@@ -453,48 +410,48 @@ shared void testParsingEmptyArrayLiterals() {
     assertEquals(elements.size, 0, "Wrong number of array elements");
 }
 
+{[ String, [ <Literal->Integer|[Integer, String, Integer]>* ] ]*} testParsingHashLiteralsParameters = {
+    [ "{}", empty ],
+    [ """{"one":1, "two":2, "three":3}""", [ "one"->1, "two"->2, "three"->3 ] ],
+    [ "{true:1, false:2}", [ true->1, false->2 ] ],
+    [ "{1:1, 2:2, 3:3}", [ 1->1, 2->2, 3->3 ] ],
+    [ "{1:0+1, 2:10-8, 3:15/5}", [ 1->[ 0, "+", 1 ], 2->[ 10, "-", 8 ], 3->[ 15, "/", 5 ] ] ]
+};
+
 test
-shared void testParsingHashLiterals() {
-    value testParameters = [
-        [ "{}", empty ],
-        [ """{"one":1, "two":2, "three":3}""", [ "one"->1, "two"->2, "three"->3 ] ],
-        [ "{true:1, false:2}", [ true->1, false->2 ] ],
-        [ "{1:1, 2:2, 3:3}", [ 1->1, 2->2, 3->3 ] ],
-        [ "{1:0+1, 2:10-8, 3:15/5}", [ 1->[ 0, "+", 1 ], 2->[ 10, "-", 8 ], 3->[ 15, "/", 5 ] ] ]
-    ];
+parameters(`value testParsingHashLiteralsParameters`)
+shared void testParsingHashLiterals(String input,
+        [ <Literal->Integer|[Integer, String, Integer]>* ] expectedEntries) {
+    value hash = parseExpressionStatement<HashLiteral>(input);
+    value entries = hash.entries;
     
-    for ([ input, expectedEntries ] in testParameters) {
-        value hash = parseExpressionStatement<HashLiteral>(input);
-        value entries = hash.entries;
+    assertEquals(entries.size, expectedEntries.size, "Wrong number of entries");
+    
+    for (index in 0:entries.size) {
+        value entry = entries[index];
+        value expectedEntry = expectedEntries[index];
         
-        assertEquals(entries.size, expectedEntries.size, "Wrong number of entries");
+        assert (exists entry, exists expectedEntry);
         
-        for (index in 0:entries.size) {
-            value entry = entries[index];
-            value expectedEntry = expectedEntries[index];
+        switch (expectedKey = expectedEntry.key)
+        case (is Boolean) {
+            validateBooleanLiteral(entry.key, expectedKey);
+        }
+        case (is Integer) {
+            validateIntegerLiteral(entry.key, expectedKey);
+        }
+        case (is String) {
+            validateStringLiteral(entry.key, expectedKey);
+        }
+        
+        switch (expectedItem = expectedEntry.item)
+        case (is Integer) {
+            validateIntegerLiteral(entry.item, expectedItem);
+        }
+        case (is [Integer, String, Integer]) {
+            value [ left, operator, right] = expectedItem;
             
-            assert (exists entry, exists expectedEntry);
-            
-            switch (expectedKey = expectedEntry.key)
-            case (is Boolean) {
-                validateBooleanLiteral(entry.key, expectedKey);
-            }
-            case (is Integer) {
-                validateIntegerLiteral(entry.key, expectedKey);
-            }
-            case (is String) {
-                validateStringLiteral(entry.key, expectedKey);
-            }
-            
-            switch (expectedItem = expectedEntry.item)
-            case (is Integer) {
-                validateIntegerLiteral(entry.item, expectedItem);
-            }
-            case (is [Integer, String, Integer]) {
-                value [ left, operator, right] = expectedItem;
-                
-                validateInfixExpression(entry.item, left, operator, right);
-            }
+            validateInfixExpression(entry.item, left, operator, right);
         }
     }
 }
@@ -508,61 +465,60 @@ shared void testParsingIndexExpressions() {
     validateInfixExpression(expression.index, 1, "+", 2);
 }
 
-test
-shared void testParsingInfixExpressions() {
-    value testParameters = [
-        [ "5 + 5;", 5, "+", 5 ],
-        [ "5 - 5;", 5, "-", 5 ],
-        [ "5 * 5;", 5, "*", 5 ],
-        [ "5 / 5;", 5, "/", 5 ],
-        [ "5 > 5;", 5, ">", 5 ],
-        [ "5 < 5;", 5, "<", 5 ],
-        [ "5 == 5;", 5, "==", 5 ],
-        [ "5 != 5;", 5, "!=", 5 ],
-        [ "true == true;", true, "==", true ],
-        [ "true != false;", true, "!=", false ],
-        [ "false == false;", false, "==", false ]
-    ];
-    
-    for ([ input, expectedLeftLiteral, expectedOperator, expectedRightLiteral ] in testParameters) {
-        value expression = parseExpressionStatement<InfixExpression>(input);
-        
-        validateInfixExpression(expression,
-            expectedLeftLiteral, expectedOperator, expectedRightLiteral);
-    }
-}
+{[ String, Literal, String, Literal ]*} testParsingInfixExpressionsParameters = {
+    [ "5 + 5;", 5, "+", 5 ],
+    [ "5 - 5;", 5, "-", 5 ],
+    [ "5 * 5;", 5, "*", 5 ],
+    [ "5 / 5;", 5, "/", 5 ],
+    [ "5 > 5;", 5, ">", 5 ],
+    [ "5 < 5;", 5, "<", 5 ],
+    [ "5 == 5;", 5, "==", 5 ],
+    [ "5 != 5;", 5, "!=", 5 ],
+    [ "true == true;", true, "==", true ],
+    [ "true != false;", true, "!=", false ],
+    [ "false == false;", false, "==", false ]
+};
 
 test
-shared void testParsingPrefixExpressions() {
-    value testParameters = [
-        [ "!5;", "!", 5 ],
-        [ "-15;", "-", 15 ],
-        [ "!true;", "!", true ],
-        [ "!false;", "!", false ]
-    ];
+parameters(`value testParsingInfixExpressionsParameters`)
+shared void testParsingInfixExpressions(String input, Literal expectedLeftLiteral,
+        String expectedOperator, Literal expectedRightLiteral) {
+    value expression = parseExpressionStatement<InfixExpression>(input);
     
-    for ([ input, expectedOperator, expectedLiteral ] in testParameters) {
-        value expression = parseExpressionStatement<PrefixExpression>(input);
-        
-        assertEquals(expression.operator, expectedOperator, "Incorrect operator");
-        
-        validateLiteralExpression(expression.right, expectedLiteral);
-    }
+    validateInfixExpression(expression,
+        expectedLeftLiteral, expectedOperator, expectedRightLiteral);
 }
 
+{[ String, String, Literal ]*} testParsingPrefixExpressionsParameters = {
+    [ "!5;", "!", 5 ],
+    [ "-15;", "-", 15 ],
+    [ "!true;", "!", true ],
+    [ "!false;", "!", false ]
+};
+
 test
-shared void testReturnStatements() {
-    value testParameters = [
-        [ "return 5;", 5 ],
-        [ "return true;", true ],
-        [ "return foobar;", "foobar" ]
-    ];
+parameters(`value testParsingPrefixExpressionsParameters`)
+shared void testParsingPrefixExpressions(String input, String expectedOperator,
+        Literal expectedLiteral) {
+    value expression = parseExpressionStatement<PrefixExpression>(input);
     
-    for ([ input, expectedValue ] in testParameters) {
-        value statement = parseStatement<ReturnStatement>(input);
-        
-        validateReturnStatement(statement, expectedValue);
-    }
+    assertEquals(expression.operator, expectedOperator, "Incorrect operator");
+    
+    validateLiteralExpression(expression.right, expectedLiteral);
+}
+
+{[ String, Literal ]*} testReturnStatementsParameters = {
+    [ "return 5;", 5 ],
+    [ "return true;", true ],
+    [ "return foobar;", "foobar" ]
+};
+
+test
+parameters(`value testReturnStatementsParameters`)
+shared void testReturnStatements(String input, Literal expectedValue) {
+    value statement = parseStatement<ReturnStatement>(input);
+    
+    validateReturnStatement(statement, expectedValue);
 }
 
 test
