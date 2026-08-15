@@ -81,6 +81,14 @@ class EvalTest {
         arguments(
             """"Hello" - "World"""",
             "unknown operator: STRING - STRING"
+        ),
+        arguments(
+            "len(1)",
+            "argument to `len` not supported, got INTEGER"
+        ),
+        arguments(
+            """len("one", "two")""",
+            "wrong number of arguments. got 2, but wanted 1"
         )
     )
 
@@ -198,7 +206,11 @@ class EvalTest {
                 }
                 """.trimIndent(),
             10
-        )
+        ),
+        // built-in functions
+        arguments("""len("")""", 0),
+        arguments("""len("four")""", 4),
+        arguments("""len("hello world")""", 11)
     )
 
     @ParameterizedTest

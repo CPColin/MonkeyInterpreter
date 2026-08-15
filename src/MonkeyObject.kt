@@ -19,6 +19,13 @@ value class MonkeyBoolean private constructor(val value: Boolean) : MonkeyObject
 }
 
 @JvmInline
+value class MonkeyBuiltInFunction(val value: BuiltInFunction) : MonkeyObject {
+    override val string get() = value.toString()
+
+    override val type get() = "BUILTIN"
+}
+
+@JvmInline
 value class MonkeyError(val message: String) : MonkeyObject {
     override val string get() = "ERROR: $message"
     override val type get() = "ERROR"

@@ -40,7 +40,7 @@ context(environment: Environment)
 fun evalCallExpression(expression: CallExpression): MonkeyObject {
     val function = eval(expression.function)
 
-    if (function is MonkeyError || function !is MonkeyFunction) {
+    if (function is MonkeyError || (function !is MonkeyBuiltInFunction && function !is MonkeyFunction)) {
         return function
     }
 
@@ -54,11 +54,17 @@ fun evalCallExpression(expression: CallExpression): MonkeyObject {
         argument
     }
 
-    val result = context(function.environment.copy(function.function.parameters, arguments)) {
-        eval(function.function.body)
-    }
+    return if (function is MonkeyBuiltInFunction) {
+        function.value(arguments)
+    } else if (function is MonkeyFunction) {
+        val result = context(function.environment.copy(function.function.parameters, arguments)) {
+            eval(function.function.body)
+        }
 
-    return if (result is MonkeyReturn) result.value else result
+        if (result is MonkeyReturn) result.value else result
+    } else {
+        error("Invalid function type: ${function.type}")
+    }
 }
 
 context(environment: Environment)
