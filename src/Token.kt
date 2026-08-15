@@ -28,6 +28,8 @@ data class Token(
         RPAREN,
         LBRACE,
         RBRACE,
+        LBRACKET,
+        RBRACKET,
 
         // Keywords
         ELSE,

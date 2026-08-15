@@ -7,7 +7,7 @@ val BUILT_IN_FUNCTIONS: Map<String, MonkeyBuiltInFunction> = mapOf(
         } else if (args[0] is MonkeyString) {
             MonkeyInteger(args[0].string.length)
         } else {
-            MonkeyError("argument to `len` not supported, got INTEGER")
+            MonkeyError("argument to `len` not supported, got ${args[0].type}")
         }
     }
 )

@@ -27,6 +27,7 @@ class LexerTest {
                 10 != 9;
                 "foobar"
                 "foo bar"
+                [1, 2];
                 """.trimIndent()
         val expected = listOf(
             Token.Type.LET to "let",
@@ -104,7 +105,13 @@ class LexerTest {
             Token.Type.SEMICOLON to ";",
             Token.Type.STRING to "foobar",
             Token.Type.STRING to "foo bar",
-            Token.Type.EOF to "",
+            Token.Type.LBRACKET to "[",
+            Token.Type.INT to "1",
+            Token.Type.COMMA to ",",
+            Token.Type.INT to "2",
+            Token.Type.RBRACKET to "]",
+            Token.Type.SEMICOLON to ";",
+            Token.Type.EOF to ""
         )
 
         val lexer = Lexer(input)

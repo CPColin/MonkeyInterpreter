@@ -39,6 +39,8 @@ class Lexer(private val input: String) {
             ')' -> Token(")", Type.RPAREN)
             '{' -> Token("{", Type.LBRACE)
             '}' -> Token("}", Type.RBRACE)
+            '[' -> Token("[", Type.LBRACKET)
+            ']' -> Token("]", Type.RBRACKET)
             '"' -> Token(readString(), Type.STRING)
             '\u0000' -> Token("", Type.EOF)
             else -> {

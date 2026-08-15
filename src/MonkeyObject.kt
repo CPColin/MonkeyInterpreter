@@ -4,6 +4,11 @@ sealed interface MonkeyObject {
     val type: String
 }
 
+data class MonkeyArray(val elements: List<MonkeyObject>) : MonkeyObject {
+    override val string = elements.joinToString(prefix = "[", separator = ", ", postfix = "]") { it.string }
+    override val type = "ARRAY"
+}
+
 @JvmInline
 value class MonkeyBoolean private constructor(val value: Boolean) : MonkeyObject {
     override val string get() = value.toString()

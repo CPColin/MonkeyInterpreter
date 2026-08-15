@@ -10,6 +10,10 @@ data class Program(val statements: List<Statement>) : Node {
     override val string = statements.joinToString(separator = "", transform = Node::string)
 }
 
+data class ArrayLiteral(val elements: List<Expression>) : Expression {
+    override val string = elements.joinToString(prefix = "[", separator = ", ", postfix = "]") { it.string }
+}
+
 data class BlockStatement(val statements: List<Statement>) : Statement {
     override val string = statements.joinToString { it.string }
 }
@@ -60,6 +64,10 @@ data class IfExpression(
                 append(alternative.string)
             }
         }
+}
+
+data class IndexExpression(val left: Expression?, val index: Expression?) : Expression {
+    override val string = "(${left?.string}[${index?.string}])"
 }
 
 data class InfixExpression(val left: Expression?, val operator: String, val right: Expression?) : Expression {

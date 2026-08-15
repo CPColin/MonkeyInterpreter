@@ -13,11 +13,21 @@ class EvalTest {
             eval(Parser(Lexer(input)).parseProgram())
         }
 
+        assertEvalResult(expected, result)
+    }
+
+    private fun assertEvalResult(expected: Any?, result: MonkeyObject) {
         if (result is MonkeyError) {
             fail(result.message)
         }
 
         when (expected) {
+            is Array<*> -> {
+                assertIs<MonkeyArray>(result)
+                for ((index, element) in expected.withIndex()) {
+                    assertEvalResult(element, result.elements[index])
+                }
+            }
             is Boolean -> {
                 assertIs<MonkeyBoolean>(result)
                 assertEquals(expected, result.value)
@@ -210,7 +220,19 @@ class EvalTest {
         // built-in functions
         arguments("""len("")""", 0),
         arguments("""len("four")""", 4),
-        arguments("""len("hello world")""", 11)
+        arguments("""len("hello world")""", 11),
+        arguments("[1, 2 + 2, 3 * 3]", arrayOf(1, 4, 9)),
+        // index expressions
+        arguments("[1, 2, 3][0]", 1),
+        arguments("[1, 2, 3][1]", 2),
+        arguments("[1, 2, 3][2]", 3),
+        arguments("let i = 0; [1][i];", 1),
+        arguments("[1, 2, 3][1 + 1];", 3),
+        arguments("let myArray = [1, 2, 3]; myArray[2];", 3),
+        arguments("let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];", 6),
+        arguments("let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]", 2),
+        arguments("[1, 2, 3][3]", null),
+        arguments("[1, 2, 3][-1]", null)
     )
 
     @ParameterizedTest

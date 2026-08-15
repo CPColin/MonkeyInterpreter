@@ -6,7 +6,8 @@ class Parser(private val lexer: Lexer) {
         SUM,
         PRODUCT,
         PREFIX,
-        CALL
+        CALL,
+        INDEX
     }
 
     private var currentToken = Token("", Token.Type.EOF)
@@ -38,6 +39,10 @@ class Parser(private val lexer: Lexer) {
         peekToken = lexer.nextToken()
     }
 
+    fun parseArrayLiteral(): ArrayLiteral {
+        return ArrayLiteral(parseExpressionList(Token.Type.RBRACKET))
+    }
+
     fun parseBlockStatement(): BlockStatement {
         nextToken()
 
@@ -61,28 +66,27 @@ class Parser(private val lexer: Lexer) {
         return value?.let { BooleanLiteral(value) }
     }
 
-    // TODO: merge with parseFunctionParameters?
-    fun parseCallArguments(): List<Expression> {
+    fun parseCallExpression(function: Expression?): CallExpression {
+        return CallExpression(function, parseExpressionList(Token.Type.RPAREN))
+    }
+
+    fun <T> parseElementList(endTokenType: Token.Type, parser: () -> T?): List<T> {
         nextToken()
 
         return buildList {
-            while (currentToken.type != Token.Type.RPAREN && currentToken.type != Token.Type.EOF) {
-                parseExpression(Precedence.LOWEST)?.run { add(this) }
+            while (currentToken.type != endTokenType && currentToken.type != Token.Type.EOF) {
+                parser()?.run { add(this) }
                 nextToken()
 
                 if (currentToken.type == Token.Type.COMMA) {
                     nextToken()
-                } else if (currentToken.type != Token.Type.RPAREN) {
-                    errors.add("Expected another argument or end of argument list")
+                } else if (currentToken.type != endTokenType) {
+                    errors.add("Expected another element or $endTokenType")
                     nextToken()
                     break
                 }
             }
         }
-    }
-
-    fun parseCallExpression(function: Expression?): CallExpression {
-        return CallExpression(function, parseCallArguments())
     }
 
     fun parseExpression(precedence: Precedence): Expression? {
@@ -104,6 +108,9 @@ class Parser(private val lexer: Lexer) {
 
         return left
     }
+
+    fun parseExpressionList(endTokenType: Token.Type): List<Expression> =
+        parseElementList(endTokenType) { parseExpression(Precedence.LOWEST) }
 
     fun parseExpressionStatement() =
         ExpressionStatement(parseExpression(Precedence.LOWEST)).also {
@@ -128,25 +135,7 @@ class Parser(private val lexer: Lexer) {
         return FunctionLiteral(parameters, body)
     }
 
-    // I like this implementation better than the reference, but we'll see if it holds up.
-    fun parseFunctionParameters(): List<Identifier> {
-        nextToken()
-
-        return buildList {
-            while (currentToken.type != Token.Type.RPAREN && currentToken.type != Token.Type.EOF) {
-                parseIdentifier().run { add(this) }
-                nextToken()
-
-                if (currentToken.type == Token.Type.COMMA) {
-                    nextToken()
-                } else if (currentToken.type != Token.Type.RPAREN) {
-                    errors.add("Expected another parameter or end of parameter list")
-                    nextToken()
-                    break
-                }
-            }
-        }
-    }
+    fun parseFunctionParameters(): List<Identifier> = parseElementList(Token.Type.RPAREN) { parseIdentifier() }
 
     fun parseGroupedExpression(): Expression? {
         nextToken()
@@ -190,6 +179,18 @@ class Parser(private val lexer: Lexer) {
         }
 
         return IfExpression(condition, consequence, alternative)
+    }
+
+    fun parseIndexExpression(left: Expression?): Expression? {
+        nextToken()
+
+        val index = parseExpression(Precedence.LOWEST)
+
+        if (!expectPeek(Token.Type.RBRACKET)) {
+            return null
+        }
+
+        return IndexExpression(left, index)
     }
 
     fun parseInfixExpression(left: Expression?): Expression {
@@ -283,10 +284,11 @@ class Parser(private val lexer: Lexer) {
     fun peekPrecedence() = precedences[peekToken.type] ?: Precedence.LOWEST
 
     companion object {
-        private val infixParsers: Map<Token.Type, (Parser, Expression?) -> Expression> = mapOf(
+        private val infixParsers: Map<Token.Type, (Parser, Expression?) -> Expression?> = mapOf(
             Token.Type.ASTERISK to Parser::parseInfixExpression,
             Token.Type.EQ to Parser::parseInfixExpression,
             Token.Type.GT to Parser::parseInfixExpression,
+            Token.Type.LBRACKET to Parser::parseIndexExpression,
             Token.Type.LPAREN to Parser::parseCallExpression,
             Token.Type.LT to Parser::parseInfixExpression,
             Token.Type.MINUS to Parser::parseInfixExpression,
@@ -304,7 +306,8 @@ class Parser(private val lexer: Lexer) {
             Token.Type.PLUS to Precedence.SUM,
             Token.Type.MINUS to Precedence.SUM,
             Token.Type.SLASH to Precedence.PRODUCT,
-            Token.Type.ASTERISK to Precedence.PRODUCT
+            Token.Type.ASTERISK to Precedence.PRODUCT,
+            Token.Type.LBRACKET to Precedence.INDEX
         )
 
         private val prefixParsers: Map<Token.Type, (Parser) -> Expression?> = mapOf(
@@ -314,6 +317,7 @@ class Parser(private val lexer: Lexer) {
             Token.Type.IDENT to Parser::parseIdentifier,
             Token.Type.IF to Parser::parseIfExpression,
             Token.Type.INT to Parser::parseIntegerLiteral,
+            Token.Type.LBRACKET to Parser::parseArrayLiteral,
             Token.Type.LPAREN to Parser::parseGroupedExpression,
             Token.Type.MINUS to Parser::parsePrefixExpression,
             Token.Type.STRING to Parser::parseStringLiteral,

@@ -1,8 +1,12 @@
 @file:Suppress("IfThenToElvis")
 
+import kotlin.collections.map
+
+
 context(environment: Environment)
 fun eval(node: Node?): MonkeyObject =
     when (node) {
+        is ArrayLiteral -> evalArrayLiteral(node)
         is BlockStatement -> evalBlockStatement(node)
         is BooleanLiteral -> MonkeyBoolean(node.value)
         is CallExpression -> evalCallExpression(node)
@@ -10,6 +14,7 @@ fun eval(node: Node?): MonkeyObject =
         is FunctionLiteral -> MonkeyFunction(node, environment)
         is Identifier -> evalIdentifier(node.value)
         is IfExpression -> evalIfExpression(node)
+        is IndexExpression -> evalIndexExpression(node)
         is InfixExpression -> evalInfixExpression(node)
         is IntegerLiteral -> MonkeyInteger(node.value)
         is LetStatement -> evalLetStatement(node)
@@ -20,6 +25,17 @@ fun eval(node: Node?): MonkeyObject =
         null -> MonkeyNull
         else -> error("Unsupported node type: ${node::class.simpleName}")
     }
+
+context(environment: Environment)
+fun evalArrayLiteral(literal: ArrayLiteral): MonkeyObject {
+    val elements = evalExpressions(literal.elements)
+
+    if (elements.firstOrNull() is MonkeyError) {
+        return elements.first()
+    }
+
+    return MonkeyArray(elements)
+}
 
 context(environment: Environment)
 fun evalBlockStatement(statement: BlockStatement): MonkeyObject {
@@ -44,14 +60,10 @@ fun evalCallExpression(expression: CallExpression): MonkeyObject {
         return function
     }
 
-    val arguments = expression.arguments.map {
-        val argument = eval(it)
+    val arguments = evalExpressions(expression.arguments)
 
-        if (argument is MonkeyError) {
-            return argument
-        }
-
-        argument
+    if (arguments.firstOrNull() is MonkeyError) {
+        return arguments.first()
     }
 
     return if (function is MonkeyBuiltInFunction) {
@@ -66,6 +78,18 @@ fun evalCallExpression(expression: CallExpression): MonkeyObject {
         error("Invalid function type: ${function.type}")
     }
 }
+
+context(environment: Environment)
+fun evalExpressions(expressions: Iterable<Expression>): List<MonkeyObject> =
+    expressions.map {
+        val argument = eval(it)
+
+        if (argument is MonkeyError) {
+            return listOf(argument)
+        }
+
+        argument
+    }
 
 context(environment: Environment)
 fun evalIdentifier(name: String) =
@@ -84,6 +108,31 @@ fun evalIfExpression(expression: IfExpression): MonkeyObject {
         } else {
             MonkeyNull
         }
+    }
+}
+
+context(environment: Environment)
+fun evalIndexExpression(expression: IndexExpression): MonkeyObject {
+    val left = eval(expression.left)
+
+    if (left is MonkeyError) {
+        return left
+    }
+
+    val index = eval(expression.index)
+
+    if (index is MonkeyError) {
+        return index
+    }
+
+    return if (left is MonkeyArray && index is MonkeyInteger) {
+        if (index.value < 0 || index.value >= left.elements.size) {
+            MonkeyNull
+        } else {
+            left.elements[index.value]
+        }
+    } else {
+        MonkeyError("index operator not supported on type ${left.type}")
     }
 }
 

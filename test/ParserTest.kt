@@ -165,6 +165,39 @@ class ParserTest {
                     StringLiteral("hello world")
                 )
             )
+        ),
+        arguments(
+            "[]",
+            listOf(
+                ExpressionStatement(
+                    ArrayLiteral(emptyList())
+                )
+            )
+        ),
+        arguments(
+            "[1, 2 + 2, 3 * 3]",
+            listOf(
+                ExpressionStatement(
+                    ArrayLiteral(
+                        listOf(
+                            IntegerLiteral(1),
+                            InfixExpression(IntegerLiteral(2), "+", IntegerLiteral(2)),
+                            InfixExpression(IntegerLiteral(3), "*", IntegerLiteral(3))
+                        )
+                    )
+                )
+            )
+        ),
+        arguments(
+            "myArray[1 + 2]",
+            listOf(
+                ExpressionStatement(
+                    IndexExpression(
+                        Identifier("myArray"),
+                        InfixExpression(IntegerLiteral(1), "+", IntegerLiteral(2)),
+                    )
+                )
+            )
         )
     )
 
@@ -222,6 +255,14 @@ class ParserTest {
         arguments(
             "a + add(b * c) + d",
             "((a + add((b * c))) + d)"
+        ),
+        arguments(
+            "a * [1, 2, 3, 4][b * c] * d",
+            "((a * ([1, 2, 3, 4][(b * c)])) * d)"
+        ),
+        arguments(
+            "add(a * b[2], b[1], 2 * [1, 2][1])",
+            "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))"
         )
     )
 
