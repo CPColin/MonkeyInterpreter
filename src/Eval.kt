@@ -16,6 +16,7 @@ fun eval(node: Node?): MonkeyObject =
         is PrefixExpression -> evalPrefixExpression(node)
         is Program -> evalProgram(node)
         is ReturnStatement -> evalReturnStatement(node)
+        is StringLiteral -> MonkeyString(node.value)
         null -> MonkeyNull
         else -> error("Unsupported node type: ${node::class.simpleName}")
     }
@@ -112,6 +113,13 @@ fun evalInfixExpression(expression: InfixExpression): MonkeyObject {
             "==" -> MonkeyBoolean(left.value == right.value)
             "!=" -> MonkeyBoolean(left.value != right.value)
             else -> MonkeyError("unknown operator: BOOLEAN ${expression.operator} BOOLEAN")
+        }
+    } else if (left is MonkeyString && right is MonkeyString) {
+        when (expression.operator) {
+            "+" -> MonkeyString(left.value + right.value)
+            "==" -> MonkeyBoolean(left.value == right.value)
+            "!=" -> MonkeyBoolean(left.value != right.value)
+            else -> MonkeyError("unknown operator: STRING ${expression.operator} STRING")
         }
     } else {
         MonkeyError("type mismatch: ${left.type} ${expression.operator} ${right.type}")

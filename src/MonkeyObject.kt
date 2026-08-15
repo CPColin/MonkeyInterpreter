@@ -42,3 +42,9 @@ object MonkeyNull : MonkeyObject {
 
 @JvmInline
 value class MonkeyReturn(val value: MonkeyObject) : MonkeyObject by value
+
+@JvmInline
+value class MonkeyString(val value: String) : MonkeyObject {
+    override val string get() = value
+    override val type get() = "STRING"
+}

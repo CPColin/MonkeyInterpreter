@@ -7,6 +7,7 @@ data class Token(
         EOF,
         IDENT,
         INT,
+        STRING,
 
         // Operators
         ASSIGN,

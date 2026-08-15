@@ -278,6 +278,8 @@ class Parser(private val lexer: Lexer) {
             else -> parseExpressionStatement()
         }
 
+    fun parseStringLiteral() = StringLiteral(currentToken.literal)
+
     fun peekPrecedence() = precedences[peekToken.type] ?: Precedence.LOWEST
 
     companion object {
@@ -314,6 +316,7 @@ class Parser(private val lexer: Lexer) {
             Token.Type.INT to Parser::parseIntegerLiteral,
             Token.Type.LPAREN to Parser::parseGroupedExpression,
             Token.Type.MINUS to Parser::parsePrefixExpression,
+            Token.Type.STRING to Parser::parseStringLiteral,
             Token.Type.TRUE to Parser::parseBooleanLiteral
         )
     }

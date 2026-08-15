@@ -45,11 +45,15 @@ class EvalTest {
         arguments("false == false", true),
         arguments("true == false", false),
         arguments("true != false", true),
-        arguments("false != true", true),
+        arguments("true != true", false),
         arguments("(1 < 2) == true", true),
         arguments("(1 < 2) == false", false),
         arguments("(1 > 2) == true", false),
-        arguments("(1 > 2) == false", true)
+        arguments("(1 > 2) == false", true),
+        arguments(""""Hello" == "World"""", false),
+        arguments(""""Hello" != "World"""", true),
+        arguments(""""Hello" == "Hello"""", true),
+        arguments(""""Hello" != "Hello"""", false)
     )
 
     @ParameterizedTest
@@ -130,6 +134,10 @@ class EvalTest {
         arguments(
             "foobar",
             "identifier not found: foobar"
+        ),
+        arguments(
+            """"Hello" - "World"""",
+            "unknown operator: STRING - STRING"
         )
     )
 
@@ -247,6 +255,25 @@ class EvalTest {
         val result = eval(input)
 
         assertIs<MonkeyInteger>(result)
+        assertEquals(expected, result.value)
+    }
+
+    private fun stringExpression() = listOf(
+        arguments(
+            """
+                "Hello World!"
+                """.trimIndent(),
+            "Hello World!"
+        ),
+        arguments(""""Hello" + " " + "World"""", "Hello World")
+    )
+
+    @ParameterizedTest
+    @MethodSource
+    fun stringExpression(input: String, expected: String) {
+        val result = eval(input)
+
+        assertIs<MonkeyString>(result)
         assertEquals(expected, result.value)
     }
 }

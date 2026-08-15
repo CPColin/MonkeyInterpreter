@@ -155,6 +155,16 @@ class ParserTest {
                     )
                 )
             )
+        ),
+        arguments(
+            """
+                "hello world"
+                """.trimIndent(),
+            listOf(
+                ExpressionStatement(
+                    StringLiteral("hello world")
+                )
+            )
         )
     )
 

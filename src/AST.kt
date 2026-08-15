@@ -81,3 +81,7 @@ data class PrefixExpression(val operator: String, val right: Expression?) : Expr
 data class ReturnStatement(val value: Expression?) : Statement {
     override val string = "return ${value?.string};"
 }
+
+data class StringLiteral(val value: String) : Expression {
+    override val string = "\"$value\""
+}

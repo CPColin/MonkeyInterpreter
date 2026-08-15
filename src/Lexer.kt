@@ -39,6 +39,7 @@ class Lexer(private val input: String) {
             ')' -> Token(")", Type.RPAREN)
             '{' -> Token("{", Type.LBRACE)
             '}' -> Token("}", Type.RBRACE)
+            '"' -> Token(readString(), Type.STRING)
             '\u0000' -> Token("", Type.EOF)
             else -> {
                 if (isLetter(current)) {
@@ -88,6 +89,16 @@ class Lexer(private val input: String) {
         while (isDigit(current)) {
             readChar()
         }
+
+        return input.substring(start..<position)
+    }
+
+    fun readString(): String {
+        val start = position + 1
+
+        do {
+            readChar()
+        } while (current != '"' && current != '\u0000')
 
         return input.substring(start..<position)
     }
