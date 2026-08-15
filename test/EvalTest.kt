@@ -4,94 +4,37 @@ import org.junit.jupiter.params.provider.Arguments.arguments
 import org.junit.jupiter.params.provider.MethodSource
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.fail
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class EvalTest {
-    private fun eval(input: String): MonkeyObject =
-        context(Environment()) {
+    private fun assertEval(input: String, expected: Any?) {
+        val result = context(Environment()) {
             eval(Parser(Lexer(input)).parseProgram())
         }
 
-    private fun bang() = listOf(
-        arguments("!true", false),
-        arguments("!false", true),
-        arguments("!5", false),
-        arguments("!!true", true),
-        arguments("!!false", false),
-        arguments("!!5", true)
-    )
+        if (result is MonkeyError) {
+            fail(result.message)
+        }
 
-    @ParameterizedTest
-    @MethodSource
-    fun bang(input: String, expected: Boolean) {
-        val result = eval(input)
-
-        assertIs<MonkeyBoolean>(result)
-        assertEquals(expected, result.value)
-    }
-
-    private fun booleanExpression() = listOf(
-        arguments("true", true),
-        arguments("false", false),
-        arguments("1 < 2", true),
-        arguments("1 > 2", false),
-        arguments("1 < 1", false),
-        arguments("1 > 1", false),
-        arguments("1 == 1", true),
-        arguments("1 != 1", false),
-        arguments("1 == 2", false),
-        arguments("1 != 2", true),
-        arguments("true == true", true),
-        arguments("false == false", true),
-        arguments("true == false", false),
-        arguments("true != false", true),
-        arguments("true != true", false),
-        arguments("(1 < 2) == true", true),
-        arguments("(1 < 2) == false", false),
-        arguments("(1 > 2) == true", false),
-        arguments("(1 > 2) == false", true),
-        arguments(""""Hello" == "World"""", false),
-        arguments(""""Hello" != "World"""", true),
-        arguments(""""Hello" == "Hello"""", true),
-        arguments(""""Hello" != "Hello"""", false)
-    )
-
-    @ParameterizedTest
-    @MethodSource
-    fun booleanExpression(input: String, expected: Boolean) {
-        val result = eval(input)
-
-        assertIs<MonkeyBoolean>(result)
-        assertEquals(expected, result.value)
-    }
-
-    private fun callExpression() = listOf(
-        arguments("let identity = fn(x) { x; }; identity(5);", 5),
-        arguments("let identity = fn(x) { return x; }; identity(5);", 5),
-        arguments("let double = fn(x) { x * 2; }; double(5);", 10),
-        arguments("let add = fn(x, y) { x + y; }; add(5, 5);", 10),
-        arguments("let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20),
-        arguments("fn(x) { x; }(5)", 5),
-        arguments(
-            """
-                let newAdder = fn(x) {
-                  fn(y) { x + y };
-                };
-
-                let addTwo = newAdder(2);
-                addTwo(2);
-                """.trimIndent(),
-            4
-        )
-    )
-
-    @ParameterizedTest
-    @MethodSource
-    fun callExpression(input: String, expected: Int) {
-        val result = eval(input)
-
-        assertIs<MonkeyInteger>(result)
-        assertEquals(expected, result.value)
+        when (expected) {
+            is Boolean -> {
+                assertIs<MonkeyBoolean>(result)
+                assertEquals(expected, result.value)
+            }
+            is Int -> {
+                assertIs<MonkeyInteger>(result)
+                assertEquals(expected, result.value)
+            }
+            is String -> {
+                assertIs<MonkeyString>(result)
+                assertEquals(expected, result.value)
+            }
+            null -> {
+                assertIs<MonkeyNull>(result)
+            }
+            else -> error("Unsupported type in assertEval: ${expected::class}")
+        }
     }
 
     private fun error() = listOf(
@@ -144,50 +87,40 @@ class EvalTest {
     @ParameterizedTest
     @MethodSource
     fun error(input: String, expected: String) {
-        val result = eval(input)
+        val result = context(Environment()) {
+            eval(Parser(Lexer(input)).parseProgram())
+        }
 
         assertIs<MonkeyError>(result)
         assertEquals(expected, result.message)
     }
 
-    private fun functionLiteral() = listOf(
-        arguments("fn(x) { x + 2; }", listOf("x"), "(x + 2)")
-    )
-
-    @ParameterizedTest
-    @MethodSource
-    fun functionLiteral(input: String, expectedParameters: List<String>, expectedBody: String) {
-        val result = eval(input)
-
-        assertIs<MonkeyFunction>(result)
-        assertEquals(expectedParameters, result.function.parameters.map(Identifier::value))
-        assertEquals(expectedBody, result.function.body.string)
-    }
-
-    private fun ifElseExpression() = listOf(
-        arguments("if (true) { 10 }", 10),
-        arguments("if (false) { 10 }", null),
-        arguments("if (1) { 10 }", 10),
-        arguments("if (1 < 2) { 10 }", 10),
-        arguments("if (1 > 2) { 10 }", null),
-        arguments("if (1 > 2) { 10 } else { 20 }", 20),
-        arguments("if (1 < 2) { 10 } else { 20 }", 10)
-    )
-
-    @ParameterizedTest
-    @MethodSource
-    fun ifElseExpression(input: String, expected: Int?) {
-        val result = eval(input)
-
-        if (expected is Int) {
-            assertIs<MonkeyInteger>(result)
-            assertEquals(expected, result.value)
-        } else {
-            assertEquals(MonkeyNull, result)
-        }
-    }
-
-    private fun intExpression() = listOf(
+    private fun eval() = listOf(
+        // booleans
+        arguments("true", true),
+        arguments("false", false),
+        arguments("1 < 2", true),
+        arguments("1 > 2", false),
+        arguments("1 < 1", false),
+        arguments("1 > 1", false),
+        arguments("1 == 1", true),
+        arguments("1 != 1", false),
+        arguments("1 == 2", false),
+        arguments("1 != 2", true),
+        arguments("true == true", true),
+        arguments("false == false", true),
+        arguments("true == false", false),
+        arguments("true != false", true),
+        arguments("true != true", false),
+        arguments("(1 < 2) == true", true),
+        arguments("(1 < 2) == false", false),
+        arguments("(1 > 2) == true", false),
+        arguments("(1 > 2) == false", true),
+        arguments(""""Hello" == "World"""", false),
+        arguments(""""Hello" != "World"""", true),
+        arguments(""""Hello" == "Hello"""", true),
+        arguments(""""Hello" != "Hello"""", false),
+        // ints
         arguments("5", 5),
         arguments("10", 10),
         arguments("-5", -5),
@@ -202,35 +135,54 @@ class EvalTest {
         arguments("2 * (5 + 10)", 30),
         arguments("3 * 3 * 3 + 10", 37),
         arguments("3 * (3 * 3) + 10", 37),
-        arguments("(5 + 10 * 2 + 15 / 3) * 2 + -10", 50)
-    )
+        arguments("(5 + 10 * 2 + 15 / 3) * 2 + -10", 50),
+        // strings
+        arguments(
+            """
+                "Hello World!"
+                """.trimIndent(),
+            "Hello World!"
+        ),
+        arguments(""""Hello" + " " + "World"""", "Hello World"),
+        // bang operator
+        arguments("!true", false),
+        arguments("!false", true),
+        arguments("!5", false),
+        arguments("!!true", true),
+        arguments("!!false", false),
+        arguments("!!5", true),
+        // call expressions
+        arguments("let identity = fn(x) { x; }; identity(5);", 5),
+        arguments("let identity = fn(x) { return x; }; identity(5);", 5),
+        arguments("let double = fn(x) { x * 2; }; double(5);", 10),
+        arguments("let add = fn(x, y) { x + y; }; add(5, 5);", 10),
+        arguments("let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20),
+        arguments("fn(x) { x; }(5)", 5),
+        arguments(
+            """
+                let newAdder = fn(x) {
+                  fn(y) { x + y };
+                };
 
-    @ParameterizedTest
-    @MethodSource
-    fun intExpression(input: String, expected: Int) {
-        val result = eval(input)
-
-        assertIs<MonkeyInteger>(result)
-        assertEquals(expected, result.value)
-    }
-
-    private fun letStatement() = listOf(
+                let addTwo = newAdder(2);
+                addTwo(2);
+                """.trimIndent(),
+            4
+        ),
+        // if-else expressions
+        arguments("if (true) { 10 }", 10),
+        arguments("if (false) { 10 }", null),
+        arguments("if (1) { 10 }", 10),
+        arguments("if (1 < 2) { 10 }", 10),
+        arguments("if (1 > 2) { 10 }", null),
+        arguments("if (1 > 2) { 10 } else { 20 }", 20),
+        arguments("if (1 < 2) { 10 } else { 20 }", 10),
+        // let statements
         arguments("let a = 5; a;", 5),
         arguments("let a = 5 * 5; a;", 25),
         arguments("let a = 5; let b = a; b;", 5),
-        arguments("let a = 5; let b = a; let c = a + b + 5; c;", 15)
-    )
-
-    @ParameterizedTest
-    @MethodSource
-    fun letStatement(input: String, expected: Int) {
-        val result = eval(input)
-
-        assertIs<MonkeyInteger>(result)
-        assertEquals(expected, result.value)
-    }
-
-    private fun returnStatement() = listOf(
+        arguments("let a = 5; let b = a; let c = a + b + 5; c;", 15),
+        // return statements
         arguments("return 10;", 10),
         arguments("return 10; 9;", 10),
         arguments("return 2 * 5; 9;", 10),
@@ -251,29 +203,23 @@ class EvalTest {
 
     @ParameterizedTest
     @MethodSource
-    fun returnStatement(input: String, expected: Int) {
-        val result = eval(input)
-
-        assertIs<MonkeyInteger>(result)
-        assertEquals(expected, result.value)
+    fun eval(input: String, expected: Any?) {
+        assertEval(input, expected)
     }
 
-    private fun stringExpression() = listOf(
-        arguments(
-            """
-                "Hello World!"
-                """.trimIndent(),
-            "Hello World!"
-        ),
-        arguments(""""Hello" + " " + "World"""", "Hello World")
+    private fun functionLiteral() = listOf(
+        arguments("fn(x) { x + 2; }", listOf("x"), "(x + 2)")
     )
 
     @ParameterizedTest
     @MethodSource
-    fun stringExpression(input: String, expected: String) {
-        val result = eval(input)
+    fun functionLiteral(input: String, expectedParameters: List<String>, expectedBody: String) {
+        val result = context(Environment()) {
+            eval(Parser(Lexer(input)).parseProgram())
+        }
 
-        assertIs<MonkeyString>(result)
-        assertEquals(expected, result.value)
+        assertIs<MonkeyFunction>(result)
+        assertEquals(expectedParameters, result.function.parameters.map(Identifier::value))
+        assertEquals(expectedBody, result.function.body.string)
     }
 }
