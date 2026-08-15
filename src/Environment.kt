@@ -4,7 +4,9 @@ class Environment(
     fun copy(parameters: List<Identifier>, arguments: List<MonkeyObject>): Environment {
         val environment = Environment(map.toMutableMap())
 
-        parameters.forEachIndexed { index, parameter -> environment[parameter.value] = arguments[index] }
+        parameters.forEachIndexed {
+            index, parameter -> environment[parameter.value] = arguments.getOrElse(index) { MonkeyNull }
+        }
 
         return environment
     }

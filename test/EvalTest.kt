@@ -221,6 +221,30 @@ class EvalTest {
         arguments("""len("")""", 0),
         arguments("""len("four")""", 4),
         arguments("""len("hello world")""", 11),
+        arguments("len([1, 2, 3])", 3),
+        arguments("first([1, 2, 3])", 1),
+        arguments("last([1, 2, 3])", 3),
+        arguments("rest([1, 2, 3])", arrayOf(2, 3)),
+        arguments("push([1, 2, 3], 4)", arrayOf(1, 2, 3, 4)),
+        arguments(
+            """
+                let map = fn(arr, f) {
+                  let iter = fn(arr, accumulated) {
+                    if (len(arr) == 0) {
+                      accumulated
+                    } else {
+                      iter(rest(arr), push(accumulated, f(first(arr))));
+                    }
+                  };
+
+                  iter(arr, []);
+                };
+                
+                map([1, 2, 3, 4], fn(x) { x * 2 });
+                """.trimIndent(),
+            arrayOf(2, 4, 6, 8)
+        ),
+        // array literals
         arguments("[1, 2 + 2, 3 * 3]", arrayOf(1, 4, 9)),
         // index expressions
         arguments("[1, 2, 3][0]", 1),
@@ -232,7 +256,7 @@ class EvalTest {
         arguments("let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];", 6),
         arguments("let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]", 2),
         arguments("[1, 2, 3][3]", null),
-        arguments("[1, 2, 3][-1]", null)
+        arguments("[1, 2, 3][-1]", null),
     )
 
     @ParameterizedTest
