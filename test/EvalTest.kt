@@ -36,6 +36,15 @@ class EvalTest {
                 assertIs<MonkeyInteger>(result)
                 assertEquals(expected, result.value)
             }
+            is Map<*, *> -> {
+                assertIs<MonkeyHash>(result)
+                val resultPairs = result.value.entries.toList()
+
+                for ((index, expectedEntry) in expected.entries.withIndex()) {
+                    assertEvalResult(expectedEntry.key, resultPairs[index].key)
+                    assertEvalResult(expectedEntry.value, resultPairs[index].value)
+                }
+            }
             is String -> {
                 assertIs<MonkeyString>(result)
                 assertEquals(expected, result.value)
@@ -99,6 +108,10 @@ class EvalTest {
         arguments(
             """len("one", "two")""",
             "wrong number of arguments. got 2, but wanted 1"
+        ),
+        arguments(
+            """{"name": "Monkey"}[fn(x) { x }];""",
+            "unusable as hash key: FUNCTION"
         )
     )
 
@@ -257,7 +270,19 @@ class EvalTest {
         arguments("let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]", 2),
         arguments("[1, 2, 3][3]", null),
         arguments("[1, 2, 3][-1]", null),
-        arguments("puts(123)", null)
+        arguments("puts(123)", null),
+        // hashes
+        arguments(
+            """{"one": 1, "two": "2", 6 / 2: 3, true: 2 + 2}""",
+            mapOf("one" to 1, "two" to "2", 3 to 3, true to 4)
+        ),
+        arguments("""{"foo": 5}["foo"]""", 5),
+        arguments("""{"foo": 5}["bar"]""", null),
+        arguments("""let key = "foo"; {"foo": 5}[key]""", 5),
+        arguments("""{}["foo"]""", null),
+        arguments("""{5: 5}[5]""", 5),
+        arguments("""{true: 5}[true]""", 5),
+        arguments("""{false: 5}[false]""", 5)
     )
 
     @ParameterizedTest

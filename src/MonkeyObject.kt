@@ -10,7 +10,7 @@ data class MonkeyArray(val elements: List<MonkeyObject>) : MonkeyObject {
 }
 
 @JvmInline
-value class MonkeyBoolean private constructor(val value: Boolean) : MonkeyObject {
+value class MonkeyBoolean private constructor(val value: Boolean) : MonkeyHashKey {
     override val string get() = value.toString()
 
     override val type get() = "BOOLEAN"
@@ -44,7 +44,15 @@ data class MonkeyFunction(val function: FunctionLiteral, val environment: Enviro
 }
 
 @JvmInline
-value class MonkeyInteger(val value: Int) : MonkeyObject {
+value class MonkeyHash(val value: Map<MonkeyHashKey, MonkeyObject>) : MonkeyObject {
+    override val string get() = value.toString()
+    override val type get() = "HASH"
+}
+
+sealed interface MonkeyHashKey : MonkeyObject
+
+@JvmInline
+value class MonkeyInteger(val value: Int) : MonkeyHashKey {
     override val string get() = value.toString()
     override val type get() = "INTEGER"
 }
@@ -58,7 +66,7 @@ object MonkeyNull : MonkeyObject {
 value class MonkeyReturn(val value: MonkeyObject) : MonkeyObject by value
 
 @JvmInline
-value class MonkeyString(val value: String) : MonkeyObject {
+value class MonkeyString(val value: String) : MonkeyHashKey {
     override val string get() = value
     override val type get() = "STRING"
 }

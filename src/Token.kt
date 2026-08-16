@@ -30,6 +30,7 @@ data class Token(
         RBRACE,
         LBRACKET,
         RBRACKET,
+        COLON,
 
         // Keywords
         ELSE,

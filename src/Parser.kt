@@ -149,6 +149,38 @@ class Parser(private val lexer: Lexer) {
         return expression
     }
 
+    fun parseHashLiteral(): Expression? {
+        val pairs = buildList {
+            while (peekToken.type != Token.Type.RBRACE) {
+                nextToken()
+
+                val key = parseExpression(Precedence.LOWEST)
+
+                if (!expectPeek(Token.Type.COLON)) {
+                    return null
+                }
+
+                nextToken()
+
+                val value = parseExpression(Precedence.LOWEST)
+
+                if (peekToken.type != Token.Type.RBRACE && !expectPeek(Token.Type.COMMA)) {
+                    return null
+                }
+
+                if (key != null && value != null) {
+                    add(key to value)
+                }
+            }
+        }
+
+        if (!expectPeek(Token.Type.RBRACE)) {
+            return null
+        }
+
+        return HashLiteral(pairs)
+    }
+
     fun parseIdentifier() = Identifier(currentToken.literal)
 
     fun parseIfExpression(): Expression? {
@@ -326,6 +358,7 @@ class Parser(private val lexer: Lexer) {
             Token.Type.IDENT to Parser::parseIdentifier,
             Token.Type.IF to Parser::parseIfExpression,
             Token.Type.INT to Parser::parseIntegerLiteral,
+            Token.Type.LBRACE to Parser::parseHashLiteral,
             Token.Type.LBRACKET to Parser::parseArrayLiteral,
             Token.Type.LPAREN to Parser::parseGroupedExpression,
             Token.Type.MINUS to Parser::parsePrefixExpression,

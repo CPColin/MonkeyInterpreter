@@ -40,6 +40,11 @@ data class FunctionLiteral(val parameters: List<Identifier>, val body: BlockStat
     }
 }
 
+data class HashLiteral(val pairs: List<Pair<Expression, Expression>>) : Expression {
+    override val string =
+        pairs.joinToString(prefix = "{", separator = ", ", postfix = "}") { "${it.first}:${it.second}" }
+}
+
 data class Identifier(val value: String) : Expression {
     override val string = value
 }

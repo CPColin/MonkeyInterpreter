@@ -156,6 +156,18 @@ class ParserTest {
                     InfixExpression(IntegerLiteral(1), InfixExpression.Operator.PLUS, IntegerLiteral(2)),
                 )
             )
+        ),
+        arguments(
+            """{"one": 1, "two": 2, "three": 3}""",
+            listOf(
+                HashLiteral(
+                    listOf(
+                        StringLiteral("one") to IntegerLiteral(1),
+                        StringLiteral("two") to IntegerLiteral(2),
+                        StringLiteral("three") to IntegerLiteral(3)
+                    )
+                )
+            )
         )
     )
 

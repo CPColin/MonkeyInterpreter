@@ -11,6 +11,7 @@ fun eval(node: Node?): MonkeyObject =
         is BooleanLiteral -> MonkeyBoolean(node.value)
         is CallExpression -> evalCallExpression(node)
         is FunctionLiteral -> MonkeyFunction(node, environment)
+        is HashLiteral -> evalHashLiteral(node)
         is Identifier -> evalIdentifier(node.value)
         is IfExpression -> evalIfExpression(node)
         is IndexExpression -> evalIndexExpression(node)
@@ -89,6 +90,31 @@ fun evalExpressions(expressions: Iterable<Expression>): List<MonkeyObject> =
     }
 
 context(environment: Environment)
+fun evalHashLiteral(literal: HashLiteral): MonkeyObject {
+    val map = literal.pairs.map { (keyExpression, valueExpression) ->
+        val key = eval(keyExpression)
+
+        if (key is MonkeyError) {
+            return key
+        }
+
+        if (key !is MonkeyHashKey) {
+            return MonkeyError("key type ${key.type} not suitable as a hash key")
+        }
+
+        val value = eval(valueExpression)
+
+        if (value is MonkeyError) {
+            return value
+        }
+
+        key to value
+    }.toMap()
+
+    return MonkeyHash(map)
+}
+
+context(environment: Environment)
 fun evalIdentifier(name: String) =
     environment[name] ?: MonkeyError("identifier not found: $name")
 
@@ -127,6 +153,12 @@ fun evalIndexExpression(expression: IndexExpression): MonkeyObject {
             MonkeyNull
         } else {
             left.elements[index.value]
+        }
+    } else if (left is MonkeyHash) {
+        if (index is MonkeyHashKey) {
+            left.value[index] ?: MonkeyNull
+        } else {
+            MonkeyError("unusable as hash key: ${index.type}")
         }
     } else {
         MonkeyError("index operator not supported on type ${left.type}")
