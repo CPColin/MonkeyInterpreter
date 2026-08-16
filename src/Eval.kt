@@ -10,7 +10,6 @@ fun eval(node: Node?): MonkeyObject =
         is BlockStatement -> evalBlockStatement(node)
         is BooleanLiteral -> MonkeyBoolean(node.value)
         is CallExpression -> evalCallExpression(node)
-        is ExpressionStatement -> eval(node.value)
         is FunctionLiteral -> MonkeyFunction(node, environment)
         is Identifier -> evalIdentifier(node.value)
         is IfExpression -> evalIfExpression(node)

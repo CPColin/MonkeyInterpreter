@@ -6,7 +6,7 @@ sealed interface Node {
 
 sealed interface Statement : Node
 
-sealed interface Expression : Node
+sealed interface Expression : Statement
 
 data class Program(val statements: List<Statement>) : Node {
     override val string = statements.joinToString(separator = "", transform = Node::string)
@@ -29,11 +29,6 @@ data class CallExpression(val function: Expression?, val arguments: List<Express
         append(function?.string ?: "fn")
         arguments.joinTo(this, prefix = "(", separator = ", ", postfix = ")") { it.string }
     }
-}
-
-// TODO: What does this get us that having Expression implement Statement wouldn't?
-data class ExpressionStatement(val value: Expression?) : Statement {
-    override val string = value?.string ?: ""
 }
 
 data class FunctionLiteral(val parameters: List<Identifier>, val body: BlockStatement) : Expression {

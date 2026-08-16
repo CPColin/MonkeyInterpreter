@@ -113,7 +113,7 @@ class Parser(private val lexer: Lexer) {
         parseElementList(endTokenType) { parseExpression(Precedence.LOWEST) }
 
     fun parseExpressionStatement() =
-        ExpressionStatement(parseExpression(Precedence.LOWEST)).also {
+        parseExpression(Precedence.LOWEST).also {
             if (peekToken.type == Token.Type.SEMICOLON) {
                 nextToken()
             }
