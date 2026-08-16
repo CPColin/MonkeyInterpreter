@@ -60,6 +60,11 @@ val BUILT_IN_FUNCTIONS: Map<String, MonkeyBuiltInFunction> = mapOf(
             array
         }
     },
+    "puts" to MonkeyBuiltInFunction { args ->
+        args.forEach { println(it.string) }
+
+        MonkeyNull
+    },
     "rest" to MonkeyBuiltInFunction { args ->
         expectArgumentCount(args, 1)?.run { return@MonkeyBuiltInFunction this }
 

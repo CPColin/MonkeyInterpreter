@@ -257,6 +257,7 @@ class EvalTest {
         arguments("let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]", 2),
         arguments("[1, 2, 3][3]", null),
         arguments("[1, 2, 3][-1]", null),
+        arguments("puts(123)", null)
     )
 
     @ParameterizedTest
