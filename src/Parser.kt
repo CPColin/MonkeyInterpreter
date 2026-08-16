@@ -193,15 +193,20 @@ class Parser(private val lexer: Lexer) {
         return IndexExpression(left, index)
     }
 
-    fun parseInfixExpression(left: Expression?): Expression {
-        val operator = currentToken.literal
+    fun parseInfixExpression(left: Expression?): InfixExpression? {
+        val operator = InfixExpression.Operator.fromLiteral(currentToken.literal)
+
+        if (operator == null) {
+            errors.add("Unsupported infix operator: ${currentToken.literal}")
+        }
+
         val precedence = currentPrecedence()
 
         nextToken()
 
         val right = parseExpression(precedence)
 
-        return InfixExpression(left, operator, right)
+        return operator?.let { InfixExpression(left, operator, right) }
     }
 
     fun parseIntegerLiteral(): IntegerLiteral? {
@@ -236,14 +241,18 @@ class Parser(private val lexer: Lexer) {
         return LetStatement(name, value)
     }
 
-    fun parsePrefixExpression(): PrefixExpression {
-        val operator = currentToken.literal
+    fun parsePrefixExpression(): PrefixExpression? {
+        val operator = PrefixExpression.Operator.fromLiteral(currentToken.literal)
+
+        if (operator == null) {
+            errors.add("Unsupported prefix operator: ${currentToken.literal}")
+        }
 
         nextToken()
 
         val right = parseExpression(Precedence.PREFIX)
 
-        return PrefixExpression(operator, right)
+        return operator?.let { PrefixExpression(operator, right) }
     }
 
     fun parseProgram(): Program {

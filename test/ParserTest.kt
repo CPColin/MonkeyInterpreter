@@ -41,11 +41,11 @@ class ParserTest {
         ),
         arguments(
             "!5;",
-            listOf(ExpressionStatement(PrefixExpression("!", IntegerLiteral(5))))
+            listOf(ExpressionStatement(PrefixExpression(PrefixExpression.Operator.`!`, IntegerLiteral(5))))
         ),
         arguments(
             "-15;",
-            listOf(ExpressionStatement(PrefixExpression("-", IntegerLiteral(15))))
+            listOf(ExpressionStatement(PrefixExpression(PrefixExpression.Operator.`-`, IntegerLiteral(15))))
         ),
         arguments(
             """
@@ -59,26 +59,46 @@ class ParserTest {
                 5 != 5;
                 """.trimIndent(),
             listOf(
-                ExpressionStatement(InfixExpression(IntegerLiteral(5), "+", IntegerLiteral(5))),
-                ExpressionStatement(InfixExpression(IntegerLiteral(5), "-", IntegerLiteral(5))),
-                ExpressionStatement(InfixExpression(IntegerLiteral(5), "*", IntegerLiteral(5))),
-                ExpressionStatement(InfixExpression(IntegerLiteral(5), "/", IntegerLiteral(5))),
-                ExpressionStatement(InfixExpression(IntegerLiteral(5), ">", IntegerLiteral(5))),
-                ExpressionStatement(InfixExpression(IntegerLiteral(5), "<", IntegerLiteral(5))),
-                ExpressionStatement(InfixExpression(IntegerLiteral(5), "==", IntegerLiteral(5))),
-                ExpressionStatement(InfixExpression(IntegerLiteral(5), "!=", IntegerLiteral(5)))
+                ExpressionStatement(
+                    InfixExpression(IntegerLiteral(5), InfixExpression.Operator.PLUS, IntegerLiteral(5))
+                ),
+                ExpressionStatement(
+                    InfixExpression(IntegerLiteral(5), InfixExpression.Operator.MINUS, IntegerLiteral(5))
+                ),
+                ExpressionStatement(
+                    InfixExpression(IntegerLiteral(5), InfixExpression.Operator.MULTIPLY, IntegerLiteral(5))
+                ),
+                ExpressionStatement(
+                    InfixExpression(IntegerLiteral(5), InfixExpression.Operator.DIVIDE, IntegerLiteral(5))
+                ),
+                ExpressionStatement(
+                    InfixExpression(IntegerLiteral(5), InfixExpression.Operator.GREATER_THAN, IntegerLiteral(5))
+                ),
+                ExpressionStatement(
+                    InfixExpression(IntegerLiteral(5), InfixExpression.Operator.LESS_THAN, IntegerLiteral(5))
+                ),
+                ExpressionStatement(
+                    InfixExpression(IntegerLiteral(5), InfixExpression.Operator.EQUALS, IntegerLiteral(5))
+                ),
+                ExpressionStatement(
+                    InfixExpression(IntegerLiteral(5), InfixExpression.Operator.NOT_EQUALS, IntegerLiteral(5))
+                )
             )
         ),
         arguments(
             "true != false;",
-            listOf(ExpressionStatement(InfixExpression(BooleanLiteral(true), "!=", BooleanLiteral(false))))
+            listOf(
+                ExpressionStatement(
+                    InfixExpression(BooleanLiteral(true), InfixExpression.Operator.NOT_EQUALS, BooleanLiteral(false))
+                )
+            )
         ),
         arguments(
             "if (x < y) { x }",
             listOf(
                 ExpressionStatement(
                     IfExpression(
-                        InfixExpression(Identifier("x"), "<", Identifier("y")),
+                        InfixExpression(Identifier("x"), InfixExpression.Operator.LESS_THAN, Identifier("y")),
                         BlockStatement(listOf(ExpressionStatement(Identifier("x")))),
                         null
                     )
@@ -90,7 +110,7 @@ class ParserTest {
             listOf(
                 ExpressionStatement(
                     IfExpression(
-                        InfixExpression(Identifier("x"), "<", Identifier("y")),
+                        InfixExpression(Identifier("x"), InfixExpression.Operator.LESS_THAN, Identifier("y")),
                         BlockStatement(listOf(ExpressionStatement(Identifier("x")))),
                         BlockStatement(listOf(ExpressionStatement(Identifier("y"))))
                     )
@@ -134,7 +154,11 @@ class ParserTest {
                         BlockStatement(
                             listOf(
                                 ExpressionStatement(
-                                    InfixExpression(Identifier("x"), "+", Identifier("y"))
+                                    InfixExpression(
+                                        Identifier("x"),
+                                        InfixExpression.Operator.PLUS,
+                                        Identifier("y")
+                                    )
                                 )
                             )
                         )
@@ -150,7 +174,7 @@ class ParserTest {
                         Identifier("add"),
                         listOf(
                             IntegerLiteral(1),
-                            InfixExpression(IntegerLiteral(2), "+", IntegerLiteral(3))
+                            InfixExpression(IntegerLiteral(2), InfixExpression.Operator.PLUS, IntegerLiteral(3))
                         )
                     )
                 )
@@ -181,8 +205,8 @@ class ParserTest {
                     ArrayLiteral(
                         listOf(
                             IntegerLiteral(1),
-                            InfixExpression(IntegerLiteral(2), "+", IntegerLiteral(2)),
-                            InfixExpression(IntegerLiteral(3), "*", IntegerLiteral(3))
+                            InfixExpression(IntegerLiteral(2), InfixExpression.Operator.PLUS, IntegerLiteral(2)),
+                            InfixExpression(IntegerLiteral(3), InfixExpression.Operator.MULTIPLY, IntegerLiteral(3))
                         )
                     )
                 )
@@ -194,7 +218,7 @@ class ParserTest {
                 ExpressionStatement(
                     IndexExpression(
                         Identifier("myArray"),
-                        InfixExpression(IntegerLiteral(1), "+", IntegerLiteral(2)),
+                        InfixExpression(IntegerLiteral(1), InfixExpression.Operator.PLUS, IntegerLiteral(2)),
                     )
                 )
             )

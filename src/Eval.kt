@@ -23,7 +23,6 @@ fun eval(node: Node?): MonkeyObject =
         is ReturnStatement -> evalReturnStatement(node)
         is StringLiteral -> MonkeyString(node.value)
         null -> MonkeyNull
-        else -> error("Unsupported node type: ${node::class.simpleName}")
     }
 
 context(environment: Environment)
@@ -56,7 +55,7 @@ context(environment: Environment)
 fun evalCallExpression(expression: CallExpression): MonkeyObject {
     val function = eval(expression.function)
 
-    if (function is MonkeyError || (function !is MonkeyBuiltInFunction && function !is MonkeyFunction)) {
+    if (function is MonkeyError || function !is MonkeyCallable) {
         return function
     }
 
@@ -66,16 +65,15 @@ fun evalCallExpression(expression: CallExpression): MonkeyObject {
         return arguments.first()
     }
 
-    return if (function is MonkeyBuiltInFunction) {
-        function.value(arguments)
-    } else if (function is MonkeyFunction) {
-        val result = context(function.environment.copy(function.function.parameters, arguments)) {
-            eval(function.function.body)
-        }
+    return when (function) {
+        is MonkeyBuiltInFunction -> function.value(arguments)
+        is MonkeyFunction -> {
+            val result = context(function.environment.copy(function.function.parameters, arguments)) {
+                eval(function.function.body)
+            }
 
-        if (result is MonkeyReturn) result.value else result
-    } else {
-        error("Invalid function type: ${function.type}")
+            if (result is MonkeyReturn) result.value else result
+        }
     }
 }
 
@@ -153,27 +151,26 @@ fun evalInfixExpression(expression: InfixExpression): MonkeyObject {
     @Suppress("CascadeIf")
     return if (left is MonkeyInteger && right is MonkeyInteger) {
         when (expression.operator) {
-            "+" -> MonkeyInteger(left.value + right.value)
-            "-" -> MonkeyInteger(left.value - right.value)
-            "*" -> MonkeyInteger(left.value * right.value)
-            "/" -> MonkeyInteger(left.value / right.value)
-            "<" -> MonkeyBoolean(left.value < right.value)
-            ">" -> MonkeyBoolean(left.value > right.value)
-            "==" -> MonkeyBoolean(left.value == right.value)
-            "!=" -> MonkeyBoolean(left.value != right.value)
-            else -> MonkeyNull
+            InfixExpression.Operator.PLUS -> MonkeyInteger(left.value + right.value)
+            InfixExpression.Operator.MINUS -> MonkeyInteger(left.value - right.value)
+            InfixExpression.Operator.MULTIPLY -> MonkeyInteger(left.value * right.value)
+            InfixExpression.Operator.DIVIDE -> MonkeyInteger(left.value / right.value)
+            InfixExpression.Operator.LESS_THAN -> MonkeyBoolean(left.value < right.value)
+            InfixExpression.Operator.GREATER_THAN -> MonkeyBoolean(left.value > right.value)
+            InfixExpression.Operator.EQUALS -> MonkeyBoolean(left.value == right.value)
+            InfixExpression.Operator.NOT_EQUALS -> MonkeyBoolean(left.value != right.value)
         }
     } else if (left is MonkeyBoolean && right is MonkeyBoolean) {
         when (expression.operator) {
-            "==" -> MonkeyBoolean(left.value == right.value)
-            "!=" -> MonkeyBoolean(left.value != right.value)
+            InfixExpression.Operator.EQUALS -> MonkeyBoolean(left.value == right.value)
+            InfixExpression.Operator.NOT_EQUALS -> MonkeyBoolean(left.value != right.value)
             else -> MonkeyError("unknown operator: BOOLEAN ${expression.operator} BOOLEAN")
         }
     } else if (left is MonkeyString && right is MonkeyString) {
         when (expression.operator) {
-            "+" -> MonkeyString(left.value + right.value)
-            "==" -> MonkeyBoolean(left.value == right.value)
-            "!=" -> MonkeyBoolean(left.value != right.value)
+            InfixExpression.Operator.PLUS -> MonkeyString(left.value + right.value)
+            InfixExpression.Operator.EQUALS -> MonkeyBoolean(left.value == right.value)
+            InfixExpression.Operator.NOT_EQUALS -> MonkeyBoolean(left.value != right.value)
             else -> MonkeyError("unknown operator: STRING ${expression.operator} STRING")
         }
     } else {
@@ -209,9 +206,8 @@ fun evalPrefixExpression(expression: PrefixExpression): MonkeyObject {
     }
 
     return when (expression.operator) {
-        "!" -> evalPrefixBang(right)
-        "-" -> evalPrefixMinus(right)
-        else -> error("Unsupported prefix operator: ${expression.operator}")
+        PrefixExpression.Operator.`!` -> evalPrefixBang(right)
+        PrefixExpression.Operator.`-` -> evalPrefixMinus(right)
     }
 }
 

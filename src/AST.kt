@@ -1,10 +1,12 @@
-interface Node {
+@file:Suppress("EnumEntryName")
+
+sealed interface Node {
     val string: String
 }
 
-interface Statement : Node
+sealed interface Statement : Node
 
-interface Expression : Node
+sealed interface Expression : Node
 
 data class Program(val statements: List<Statement>) : Node {
     override val string = statements.joinToString(separator = "", transform = Node::string)
@@ -70,7 +72,25 @@ data class IndexExpression(val left: Expression?, val index: Expression?) : Expr
     override val string = "(${left?.string}[${index?.string}])"
 }
 
-data class InfixExpression(val left: Expression?, val operator: String, val right: Expression?) : Expression {
+data class InfixExpression(val left: Expression?, val operator: Operator, val right: Expression?) : Expression {
+    // I wanted to make these look like `+`, `-`, etc., but `<` caused the compiler to freak out!
+    enum class Operator(private val literal: String) {
+        PLUS("+"),
+        MINUS("-"),
+        MULTIPLY("*"),
+        DIVIDE("/"),
+        LESS_THAN("<"),
+        GREATER_THAN(">"),
+        EQUALS("=="),
+        NOT_EQUALS("!=");
+
+        override fun toString() = literal
+
+        companion object {
+            fun fromLiteral(literal: String) = Operator.entries.find { it.literal == literal }
+        }
+    }
+
     override val string = "(${left?.string} $operator ${right?.string})"
 }
 
@@ -82,7 +102,16 @@ data class LetStatement(val name: Identifier, val value: Expression?) : Statemen
     override val string = "let ${name.string} = ${value?.string};"
 }
 
-data class PrefixExpression(val operator: String, val right: Expression?) : Expression {
+data class PrefixExpression(val operator: Operator, val right: Expression?) : Expression {
+    enum class Operator {
+        `!`,
+        `-`;
+
+        companion object {
+            fun fromLiteral(literal: String) = entries.find { it.name == literal }
+        }
+    }
+
     override val string = "($operator${right?.string})"
 }
 
